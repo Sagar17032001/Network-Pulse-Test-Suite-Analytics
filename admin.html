@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Professional QoE Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f6fa;
+    color: #333;
+    padding: 2rem;
+    margin: 0;
+}
+header {
+    background: #fff;
+    color: #333;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+header h1 { font-size: 2rem; }
+.filter { margin-bottom: 2rem; text-align: center; }
+select {
+    width: 60%;
+    max-width: 400px;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+}
+.card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+canvas { width: 100% !important; height: 280px !important; margin-top: 1rem; }
+.insights { margin-top: 1rem; padding: 0.7rem; background: #f0f0f0; border-radius: 8px; }
+.good { color: #28a745; font-weight: 600; }
+.poor { color: #dc3545; font-weight: 600; }
+.collapse-toggle { cursor: pointer; color: #4a90e2; text-decoration: underline; margin-top: 0.5rem; display: inline-block; }
+.collapse-content { display: none; margin-top: 0.5rem; background: #fafafa; padding: 0.5rem; border-radius: 5px; border: 1px solid #ddd; font-size: 0.9rem; overflow-x: auto; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
+@media(max-width: 768px){ select { width: 90%; } .grid-2 { gap: 1rem; } }
+</style>
+</head>
+<body>
+
+<header><h1>QoE Dashboard</h1></header>
+
+<div class="filter">
+  <select id="userDropdown">
+    <!-- Users populated dynamically -->
+  </select>
+</div>
+
+<div id="dashboard"></div>
+
+<script>
+let allData = [];
+
+async function fetchData() {
+    const res = await fetch('https://qoe-backend-zr50.onrender.com/api/users/results');
+    allData = await res.json();
+    populateDropdown();
+    renderDashboard(allData);
+}
+
+function populateDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.innerHTML = '';
+    const optionAll = document.createElement('option');
+    optionAll.value = 'all';
+    optionAll.text = 'All Users';
+    dropdown.appendChild(optionAll);
+
+    const emails = [...new Set(allData.map(u => u.email))];
+    emails.forEach(email => {
+        const option = document.createElement('option');
+        option.value = email;
+        option.text = email;
+        dropdown.appendChild(option);
+    });
+
+    dropdown.value = 'all'; // default to all users
+}
+
+function createCard(title, content) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3>${title}</h3>${content}`;
+    return card;
+}
+
+function computeAverages(userResults) {
+    const avg = {
+        voip: { MOS:0, latencyMs:0, packetsLost:0 },
+        local: { startup:0, freezeCount:0 },
+        youtube: { freezeCount:0, freezeDuration:0 },
+        speed: { download:0, upload:0 }
+    };
+    const count = userResults.length;
+    userResults.forEach(u=>{
+        if(u.voip){ avg.voip.MOS+=u.voip.MOS||0; avg.voip.latencyMs+=u.voip.latencyMs||0; avg.voip.packetsLost+=u.voip.packetsLost||0; }
+        if(u.local){ avg.local.startup+=u.local.startup||0; avg.local.freezeCount+=u.local.freezeCount||0; }
+        if(u.youtube){ avg.youtube.freezeCount+=u.youtube.freezeCount||0; avg.youtube.freezeDuration+=u.youtube.freezeDuration||0; }
+        if(u.speed){ avg.speed.download+=u.speed.download||0; avg.speed.upload+=u.speed.upload||0; }
+    });
+    Object.keys(avg.voip).forEach(k=>avg.voip[k]=+(avg.voip[k]/count).toFixed(2));
+    Object.keys(avg.local).forEach(k=>avg.local[k]=+(avg.local[k]/count).toFixed(2));
+    Object.keys(avg.youtube).forEach(k=>avg.youtube[k]=+(avg.youtube[k]/count).toFixed(2));
+    Object.keys(avg.speed).forEach(k=>avg.speed[k]=+(avg.speed[k]/count).toFixed(2));
+    return avg;
+}
+
+function computeQoEScore(avg) {
+    let score = 0;
+    if(avg.voip.MOS) score += avg.voip.MOS*0.4;
+    if(avg.youtube.freezeCount!==undefined) score += (5-avg.youtube.freezeCount)*0.2;
+    if(avg.local.startup) score += (100-avg.local.startup)/100*5*0.2;
+    if(avg.speed.download) score += (avg.speed.download/100)*5*0.2;
+    return +score.toFixed(2);
+}
+
+function renderBarChart(ctx, labels, values, label, color='rgba(74,144,226,0.7)') {
+    new Chart(ctx,{ type:'bar', data:{labels,datasets:[{label,data:values,backgroundColor:color}]}, options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+}
+
+function renderLineChart(ctx,label,dataPoints,metricName,color='rgba(74,144,226,0.7)'){
+    new Chart(ctx,{type:'line',data:{labels:dataPoints.map(d=>new Date(d.ts).toLocaleTimeString()),datasets:[{label,data:dataPoints.map(d=>d[metricName]??0),borderColor:color,backgroundColor:color.replace('0.7','0.2'),tension:0.3,fill:true}]},options:{responsive:true}});
+}
+
+function renderDashboard(data){
+    const dashboard=document.getElementById('dashboard'); dashboard.innerHTML='';
+    const usersMap={}; data.forEach(u=>{ if(!usersMap[u.email]) usersMap[u.email]=[]; usersMap[u.email].push(u); });
+
+    Object.keys(usersMap).forEach(email=>{
+        const results=usersMap[email].sort((a,b)=>new Date(a.ts)-new Date(b.ts));
+        const avg=computeAverages(results); 
+        const qoeScore=computeQoEScore(avg);
+
+        const insights=[];
+        insights.push(avg.voip.MOS>=4?'<span class="good">VOIP MOS excellent</span>':'<span class="poor">VOIP MOS poor</span>');
+        insights.push(avg.youtube.freezeCount<=2?'<span class="good">YouTube stable</span>':'<span class="poor">Frequent YouTube freezes</span>');
+        insights.push(avg.speed.download>=20?'<span class="good">Good download speed</span>':'<span class="poor">Download speed low</span>');
+
+        const content=`
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Results Count:</strong> ${results.length}</p>
+            <div class="grid-2">
+                <canvas id="avg-voip-${email}"></canvas>
+                <canvas id="avg-local-${email}"></canvas>
+                <canvas id="avg-youtube-${email}"></canvas>
+                <canvas id="avg-speed-${email}"></canvas>
+                <canvas id="qoe-${email}"></canvas>
+            </div>
+            <div class="insights"><h5>Insights:</h5><ul>${insights.map(i=>`<li>${i}</li>`).join('')}</ul></div>
+        `;
+
+        dashboard.appendChild(createCard('User QoE Overview',content));
+
+        renderBarChart(document.getElementById(`avg-voip-${email}`),['MOS','Latency','PacketsLost'],[avg.voip.MOS,avg.voip.latencyMs,avg.voip.packetsLost],'VOIP Avg');
+        renderBarChart(document.getElementById(`avg-local-${email}`),['Startup','FreezeCount'],[avg.local.startup,avg.local.freezeCount],'Local Avg','rgba(255,159,64,0.7)');
+        renderBarChart(document.getElementById(`avg-youtube-${email}`),['FreezeCount','FreezeDuration'],[avg.youtube.freezeCount,avg.youtube.freezeDuration],'YouTube Avg','rgba(255,99,132,0.7)');
+        renderBarChart(document.getElementById(`avg-speed-${email}`),['Download','Upload'],[avg.speed.download,avg.speed.upload],'Speed Avg','rgba(75,192,192,0.7)');
+        new Chart(document.getElementById(`qoe-${email}`),{type:'doughnut',data:{labels:['QoE Score','Remaining'],datasets:[{data:[qoeScore,5-qoeScore],backgroundColor:['rgba(54,162,235,0.7)','rgba(200,200,200,0.2)']}]},options:{responsive:true,plugins:{legend:{position:'bottom'}}}});
+    });
+}
+
+// Dropdown filter
+document.getElementById('userDropdown').addEventListener('change',()=>{
+    const selected=document.getElementById('userDropdown').value;
+    if(selected==='all') return renderDashboard(allData);
+    renderDashboard(allData.filter(u=>u.email===selected));
+});
+
+fetchData();
+</script>
+</body>
+</html>
