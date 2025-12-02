@@ -402,13 +402,13 @@ agg.innerHTML = `
   ${paramBlock('VoIP MOS (A)', avgA.voip.MOS, getTagColor(avgA.voip.MOS, thresholds.voipMOS, true))}
   ${ recordsB ? paramBlock('VoIP MOS (B)', avgB.voip.MOS, getTagColor(avgB.voip.MOS, thresholds.voipMOS, true)) : '' }
   
-  ${paramBlock('Latency (A ms)', avgA.voip.latencyMs, getTagColor(avgA.voip.latencyMs, thresholds.latency, false))}
+  ${paramBlock('VoIP Latency (A ms)', avgA.voip.latencyMs, getTagColor(avgA.voip.latencyMs, thresholds.latency, false))}
   ${ recordsB ? paramBlock('Latency (B ms)', avgB.voip.latencyMs, getTagColor(avgB.voip.latencyMs, thresholds.latency, false)) : '' }
   
-  ${paramBlock('Jitter (A ms)', avgA.voip.jitter, getTagColor(avgA.voip.jitter, thresholds.jitter, false))}
+  ${paramBlock('VoIP Jitter (A ms)', avgA.voip.jitter, getTagColor(avgA.voip.jitter, thresholds.jitter, false))}
   ${ recordsB ? paramBlock('Jitter (B ms)', avgB.voip.jitter, getTagColor(avgB.voip.jitter, thresholds.jitter, false)) : '' }
   
-  ${paramBlock('Packet Loss (A %)', avgA.voip.packetsLost, getTagColor(avgA.voip.packetsLost, thresholds.packetLoss, false))}
+  ${paramBlock('VoIP Packet Loss (A %)', avgA.voip.packetsLost, getTagColor(avgA.voip.packetsLost, thresholds.packetLoss, false))}
   ${ recordsB ? paramBlock('Packet Loss (B %)', avgB.voip.packetsLost, getTagColor(avgB.voip.packetsLost, thresholds.packetLoss, false)) : '' }
 
   ${paramBlock('Local Avg Buffer (A s)', avgA.local.avgBufferAhead, getTagColor(avgA.local.avgBufferAhead, thresholds.avgBuffer, true))}
