@@ -424,8 +424,8 @@ agg.innerHTML = `
   ${paramBlock('YouTube Startup (A ms)', avgA.youtube.startup, getTagColor(avgA.youtube.startup, thresholds.youtubeStartup, false))}
   ${ recordsB ? paramBlock('YouTube Startup (B ms)', avgB.youtube.startup, getTagColor(avgB.youtube.startup, thresholds.youtubeStartup, false)) : '' }
 
-  ${paramBlock('YouTube Freeze Duration (A s)', avgA.youtube.freezeDuration, getTagColor(avgA.youtube.freezeDuration, thresholds.youtubeFreeze, false))}
-  ${ recordsB ? paramBlock('YouTube Freeze Duration (B s)', avgB.youtube.freezeDuration, getTagColor(avgB.youtube.freezeDuration, thresholds.youtubeFreeze, false)) : '' }
+  ${paramBlock('YouTube Freeze Duration (A ms)', avgA.youtube.freezeDuration, getTagColor(avgA.youtube.freezeDuration, thresholds.youtubeFreeze, false))}
+  ${ recordsB ? paramBlock('YouTube Freeze Duration (B ms)', avgB.youtube.freezeDuration, getTagColor(avgB.youtube.freezeDuration, thresholds.youtubeFreeze, false)) : '' }
 
   ${paramBlock('Download (A Mbps)', avgA.speed.download, getTagColor(avgA.speed.download, thresholds.download, true))}
   ${ recordsB ? paramBlock('Download (B Mbps)', avgB.speed.download, getTagColor(avgB.speed.download, thresholds.download, true)) : '' }
