@@ -30,19 +30,20 @@
         }
 
         @media (prefers-color-scheme: dark) {
-            :root {
-                --bg: #071027;
-                --card: #0b1220;
-                --text: #e6f0ff;
-                --muted: #98a3bf;
-                --accent: #4da6ff;
-                --glass: rgba(255, 255, 255, 0.03);
-            }
 
-            body {
-                color: var(--text);
-                background: linear-gradient(180deg, #041224 0%, #061426 100%);
+            select:focus,
+            input[type=date]:focus {
+                outline: none;
+                border-color: var(--accent);
+                box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.4);
             }
+        }
+
+
+        body {
+            color: var(--text);
+            background: linear-gradient(180deg, #041224 0%, #061426 100%);
+        }
         }
 
         @media (prefers-color-scheme: light) {
