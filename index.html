@@ -30,26 +30,20 @@
         }
 
         @media (prefers-color-scheme: dark) {
-
-            select,
-            input[type=date] {
-                background: var(--card) !important;
-                color: var(--text) !important;
-                border: 1px solid rgba(255, 255, 255, 0.14);
+            :root {
+                --bg: #071027;
+                --card: #0b1220;
+                --text: #e6f0ff !important;
+                --muted: #98a3bf;
+                --accent: #4da6ff;
+                --glass: rgba(255, 255, 255, 0.03);
             }
 
-            /* Force dropdown items to be readable */
-            select option {
-                background-color: var(--card) !important;
-                color: var(--text) !important;
-            }
-
-            /* Disable black text flash when opening on some browsers */
-            select:focus {
-                color: var(--text) !important;
+            body {
+                color: var(--text);
+                background: linear-gradient(180deg, #041224 0%, #061426 100%);
             }
         }
-
 
         @media (prefers-color-scheme: light) {
             body {
