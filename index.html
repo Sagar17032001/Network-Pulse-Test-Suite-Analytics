@@ -1,759 +1,759 @@
-    <!doctype html>
-    <html lang="en">
+<!doctype html>
+<html lang="en">
 
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <title>Network QoE Dashboard — Insightful (Compare + Worst Window + PDF)</title>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Network QoE Dashboard — Insightful (Compare + Worst Window + PDF)</title>
 
-        <!-- Chart.js -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <!-- jsPDF for PDF export -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        <link rel="icon" type="image/png" href="assets/logo.png" />
-        <link rel="icon" type="image/x-icon" href="assets/logo.png" />
+    <link rel="icon" type="image/png" href="assets/logo.png" />
+    <link rel="icon" type="image/x-icon" href="assets/logo.png" />
 
-        <style>
+    <style>
+        :root {
+            --bg: #f3f6fb;
+            --card: #fff;
+            --text: #082035;
+            --muted: #6b7a90;
+            --accent: #0b69ff;
+            --success: #00b37e;
+            --warn: #ff9f43;
+            --danger: #ff4d4f;
+            --glass: rgba(255, 255, 255, 0.6);
+            --input-text: black;
+        }
+
+        @media (prefers-color-scheme: dark) {
             :root {
-                --bg: #f3f6fb;
-                --card: #fff;
-                --text: #082035;
-                --muted: #6b7a90;
-                --accent: #0b69ff;
-                --success: #00b37e;
-                --warn: #ff9f43;
-                --danger: #ff4d4f;
-                --glass: rgba(255, 255, 255, 0.6);
-                --input-text: black;
-            }
-
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    --bg: #041224;
-                    --card: #07101a;
-                    --text: #e6f0ff;
-                    --muted: #98a3bf;
-                    --accent: #4da6ff;
-                    --glass: rgba(255, 255, 255, 0.03);
-                    --input-text: white;
-                }
-
-                body {
-                    background: linear-gradient(180deg, #041224 0%, #061426 100%);
-                    color: var(--text);
-                }
+                --bg: #041224;
+                --card: #07101a;
+                --text: #e6f0ff;
+                --muted: #98a3bf;
+                --accent: #4da6ff;
+                --glass: rgba(255, 255, 255, 0.03);
+                --input-text: white;
             }
 
             body {
-                margin: 0;
-                font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-                padding: 22px;
-                -webkit-font-smoothing: antialiased;
-                background: var(--bg);
+                background: linear-gradient(180deg, #041224 0%, #061426 100%);
                 color: var(--text);
             }
+        }
 
-            .page {
-                max-width: 1250px;
-                margin: 0 auto
-            }
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+            padding: 22px;
+            -webkit-font-smoothing: antialiased;
+            background: var(--bg);
+            color: var(--text);
+        }
 
-            .header {
-                display: flex;
-                align-items: center;
-                gap: 14px;
-                padding: 12px;
-                border-radius: 12px;
-                background: linear-gradient(90deg, rgba(11, 105, 255, 0.06), rgba(0, 183, 126, 0.02));
-                box-shadow: 0 8px 30px rgba(2, 10, 30, 0.06);
-                margin-bottom: 16px;
-                justify-content: center;
-            }
+        .page {
+            max-width: 1250px;
+            margin: 0 auto
+        }
 
-            .logo {
-                width: 44px;
-                height: 44px;
-                object-fit: contain;
-                border-radius: 8px
-            }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, rgba(11, 105, 255, 0.06), rgba(0, 183, 126, 0.02));
+            box-shadow: 0 8px 30px rgba(2, 10, 30, 0.06);
+            margin-bottom: 16px;
+            justify-content: center;
+        }
 
-            .title-block h1 {
-                margin: 0;
-                font-size: 20px
-            }
+        .logo {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: 8px
+        }
 
-            .title-block .sub {
-                font-size: 13px;
-                color: var(--muted);
-                margin-top: 6px
-            }
+        .title-block h1 {
+            margin: 0;
+            font-size: 20px
+        }
 
-            .controls {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                gap: 12px;
-                margin-bottom: 16px;
-                flex-wrap: wrap
-            }
+        .title-block .sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px
+        }
 
-            .controls-left {
-                display: flex;
-                gap: 10px;
-                align-items: center;
-                flex-wrap: wrap
-            }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap
+        }
 
-            select,
-            input[type=date] {
-                padding: 8px 10px;
-                border-radius: 8px;
-                border: 1px solid rgba(0, 0, 0, 0.06);
-                background: var(--card);
-                min-width: 160px;
-                color: var(--input-text)
-            }
+        .controls-left {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap
+        }
 
-            .btn {
-                padding: 8px 12px;
-                border-radius: 8px;
-                border: none;
-                cursor: pointer;
-                font-weight: 700
-            }
+        select,
+        input[type=date] {
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            background: var(--card);
+            min-width: 160px;
+            color: var(--input-text)
+        }
 
-            .btn.primary {
-                background: var(--accent);
-                color: white
-            }
+        .btn {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700
+        }
 
-            .btn.outline {
-                background: transparent;
-                border: 1px solid rgba(0, 0, 0, 0.06);
-                color: var(--text)
-            }
+        .btn.primary {
+            background: var(--accent);
+            color: white
+        }
 
+        .btn.outline {
+            background: transparent;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            color: var(--text)
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px
+        }
+
+        @media(min-width:1300px) {
             .grid {
-                display: grid;
-                gap: 14px
+                grid-template-columns: 1fr 420px
             }
+        }
 
-            @media(min-width:1300px) {
-                .grid {
-                    grid-template-columns: 1fr 420px
-                }
+        @media(max-width:1199px) {
+            .grid {
+                grid-template-columns: 1fr
             }
+        }
 
-            @media(max-width:1199px) {
-                .grid {
-                    grid-template-columns: 1fr
-                }
-            }
+        .card {
+            background: linear-gradient(180deg, var(--card), var(--glass));
+            padding: 14px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(2, 8, 20, 0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
-            .card {
-                background: linear-gradient(180deg, var(--card), var(--glass));
-                padding: 14px;
-                border-radius: 12px;
-                box-shadow: 0 8px 24px rgba(2, 8, 20, 0.06);
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            }
+        .card h3 {
+            margin: 0;
+            font-size: 16px
+        }
 
-            .card h3 {
-                margin: 0;
-                font-size: 16px
-            }
+        .meta {
+            font-size: 13px;
+            color: var(--muted)
+        }
 
-            .meta {
-                font-size: 13px;
-                color: var(--muted)
-            }
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px
+        }
 
+        @media(max-width:880px) {
             .two-col {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 12px
+                grid-template-columns: 1fr
             }
+        }
 
-            @media(max-width:880px) {
-                .two-col {
-                    grid-template-columns: 1fr
-                }
+        canvas {
+            width: 100% !important;
+            height: 170px !important;
+            border-radius: 8px;
+            background: transparent
+        }
+
+        .summary {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.03);
+            font-size: 14px;
+            color: var(--muted);
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .summary .score {
+            font-weight: 700
+        }
+
+        .insight-tile {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, var(--card), var(--glass));
+            box-shadow: 0 6px 18px rgba(2, 8, 20, 0.04);
+        }
+
+        .tile-left {
+            flex: 0 0 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .tile-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px
+        }
+
+        .big-score {
+            font-size: 28px;
+            font-weight: 800
+        }
+
+        .small-muted {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .insight-tag {
+            display: inline-block;
+            padding: 6px 8px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 13px
+        }
+
+        .good {
+            background: rgba(0, 179, 126, 0.12);
+            color: var(--success)
+        }
+
+        .ok {
+            background: rgba(255, 159, 64, 0.08);
+            color: var(--warn)
+        }
+
+        .bad {
+            background: rgba(255, 77, 79, 0.08);
+            color: var(--danger)
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px
+        }
+
+        .kpi {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.02)
+        }
+
+        .kpi strong {
+            display: block;
+            font-size: 18px
+        }
+
+        .legend {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-size: 16px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 12px;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
             }
+        }
 
-            canvas {
-                width: 100% !important;
-                height: 170px !important;
-                border-radius: 8px;
-                background: transparent
-            }
+        /* small sparkline */
+        .spark {
+            width: 100%;
+            height: 48px;
+        }
 
-            .summary {
-                padding: 10px;
-                border-radius: 8px;
-                background: rgba(0, 0, 0, 0.03);
-                font-size: 14px;
-                color: var(--muted);
-                display: flex;
-                flex-direction: column;
-                gap: 6px
-            }
+        .winner-badge {
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 13px
+        }
+    </style>
+</head>
 
-            .summary .score {
-                font-weight: 700
-            }
-
-            .insight-tile {
-                display: flex;
-                gap: 12px;
-                align-items: center;
-                padding: 12px;
-                border-radius: 12px;
-                background: linear-gradient(180deg, var(--card), var(--glass));
-                box-shadow: 0 6px 18px rgba(2, 8, 20, 0.04);
-            }
-
-            .tile-left {
-                flex: 0 0 120px;
-                display: flex;
-                flex-direction: column;
-                gap: 6px
-            }
-
-            .tile-right {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                gap: 6px
-            }
-
-            .big-score {
-                font-size: 28px;
-                font-weight: 800
-            }
-
-            .small-muted {
-                color: var(--muted);
-                font-size: 13px
-            }
-
-            .insight-tag {
-                display: inline-block;
-                padding: 6px 8px;
-                border-radius: 999px;
-                font-weight: 700;
-                font-size: 13px
-            }
-
-            .good {
-                background: rgba(0, 179, 126, 0.12);
-                color: var(--success)
-            }
-
-            .ok {
-                background: rgba(255, 159, 64, 0.08);
-                color: var(--warn)
-            }
-
-            .bad {
-                background: rgba(255, 77, 79, 0.08);
-                color: var(--danger)
-            }
-
-            .kpis {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                gap: 10px
-            }
-
-            .kpi {
-                padding: 10px;
-                border-radius: 8px;
-                background: rgba(0, 0, 0, 0.02)
-            }
-
-            .kpi strong {
-                display: block;
-                font-size: 18px
-            }
-
-            .legend {
-                font-size: 12px;
-                color: var(--muted)
-            }
-
-            #loader {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.7);
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                z-index: 9999;
-                color: white;
-                font-size: 16px;
-            }
-
-            .spinner {
-                width: 48px;
-                height: 48px;
-                border: 4px solid #fff;
-                border-top-color: transparent;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin-bottom: 12px;
-            }
-
-            @keyframes spin {
-                100% {
-                    transform: rotate(360deg);
-                }
-            }
-
-            /* small sparkline */
-            .spark {
-                width: 100%;
-                height: 48px;
-            }
-
-            .winner-badge {
-                padding: 6px 8px;
-                border-radius: 6px;
-                font-weight: 700;
-                font-size: 13px
-            }
-        </style>
-    </head>
-
-    <body>
-        <div id="loader">
-            <div class="spinner"></div>
-            <p>Loading data…</p>
-        </div>
-
-        <div class="page">
-            <div class="header">
-                <img src="assets/logo.png" class="logo" alt="logo" />
-                <div class="title-block">
-                    <h1>Network Pulse Test Suite Dashboard — Insights</h1>
-                    <div class="sub">Analytics • Compare users • Worst 10s highlights • Excel/PDF Export</div>
-                </div>
-            </div>
-
-            <div class="controls">
-                <div class="controls-left">
-                    <label>User A:
-                        <select id="userA"></select>
-                    </label>
-                    <label>User B:
-                        <select id="userB">
-                            <option value="none">None</option>
-                        </select>
-                    </label>
-                    <label>From: <input id="fromDate" type="date" /></label>
-                    <label>To: <input id="toDate" type="date" /></label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <button id="applyFilters" class="btn primary">Apply</button>
-                        <button id="resetFilters" class="btn outline">Reset</button>
-                    </div>
-                </div>
-
-                <div>
-                    <button id="exportPdf" class="btn outline">Export PDF</button>
-                    <button id="downloadCsv" class="btn outline">Export CSV</button>
-                    <button id="refresh" class="btn outline">Refresh</button>
-                </div>
-            </div>
-
-            <div class="grid">
-                <div id="mainColumn">
-                    <!-- Overview / insights inserted here -->
-                </div>
-
-                <div id="sideColumn">
-                    <div class="card">
-                        <h3>Quick Snapshot</h3>
-                        <div id="snapshot" class="small"></div>
-                        <div>
-                            <strong>User Selection</strong><br>
-                            Select <strong>User B = None</strong> to disable dual-user comparison mode.
-                            <br><br>
-                        </div>
-                        
-                    </div>
-                    <div class="card">
-    <h3>Legend / Notes</h3>
-    <div class="small" style="line-height:1.45;">
-        <strong style="color:#003366;">Quality of Experience (QoE) — Scoring Framework</strong><br>
-        Composite score (0–100) derived from the weighted contribution of the following KPIs:
-        <br><br>
-
-        <span style="font-weight:600;">Voice Call Quality — 35%</span><br>
-        Based on MOS-driven VoIP performance metrics benchmarked to ITU standards:<br>
-        &nbsp;&nbsp;• One-Way Latency: ≤ 150 ms target<br>
-        &nbsp;&nbsp;• Jitter: ≤ 30 ms target<br>
-        &nbsp;&nbsp;• Packet Loss: &lt; 1% target<br>
-        <br>
-
-        <span style="font-weight:600;">YouTube Streaming — 30%</span><br>
-        Evaluates playback continuity and visual quality:<br>
-        &nbsp;&nbsp;• Startup Delay: ≤ 3 sec<br>
-        &nbsp;&nbsp;• Rebuffering Ratio: &lt; 1%<br>
-        &nbsp;&nbsp;• HD / FHD resolution sustainability<br>
-        <br>
-
-        <span style="font-weight:600;">Speed & Throughput — 20%</span><br>
-        Measures real-world capacity delivery vs service baseline:<br>
-        &nbsp;&nbsp;• Download / Upload stability<br>
-        &nbsp;&nbsp;• Performance under peak load periods<br>
-        <br>
-
-        <span style="font-weight:600;">Local Video Playback — 15%</span><br>
-        Indicates device-side and in-home network stability:<br>
-        &nbsp;&nbsp;• Playback stalls<br>
-        &nbsp;&nbsp;• Frame rendering drops<br>
-        <br>
-
-        <strong>Worst 10-Second Window</strong><br>
-        Automatically detected segment identifying the lowest user-perceived performance in each test.
-        <br><br>
-
-        <strong>QoE Rating Scale</strong><br>
-        <span style="color:#00732f;">• ≥ 80 — Acceptable / Good User Experience</span><br>
-        <span style="color:#b8860b;">• 60–79 — Degraded / Impactful Issues</span><br>
-        <span style="color:#a00000;">• &lt; 60 — Poor User Experience</span><br><br>
-
-        <span style="font-size:smaller; color:#555;">
-            *If any logic changes, please mail at 
-            <a href="mailto:Sagar.Samrat@airtel.com">Sagar.Samrat@airtel.com</a>.
-        </span>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Loading data…</p>
     </div>
-</div>
 
-
-
-
-                </div>
+    <div class="page">
+        <div class="header">
+            <img src="assets/logo.png" class="logo" alt="logo" />
+            <div class="title-block">
+                <h1>Network Pulse Test Suite Dashboard — Insights</h1>
+                <div class="sub">Analytics • Compare users • Worst 10s highlights • Excel/PDF Export</div>
             </div>
         </div>
 
-        <script>
-            /* ------------------------------
-            Config & Globals
-            ------------------------------ */
-            const API_URL = 'https://qoe-backend-zr50.onrender.com/api/users/results';
-            let allData = [];
-            const charts = {}; // store Chart.js instances keyed by id
+        <div class="controls">
+            <div class="controls-left">
+                <label>User A:
+                    <select id="userA"></select>
+                </label>
+                <label>User B:
+                    <select id="userB">
+                        <option value="none">None</option>
+                    </select>
+                </label>
+                <label>From: <input id="fromDate" type="date" /></label>
+                <label>To: <input id="toDate" type="date" /></label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button id="applyFilters" class="btn primary">Apply</button>
+                    <button id="resetFilters" class="btn outline">Reset</button>
+                </div>
+            </div>
 
-            /* ------------------------------
-            Utilities (kept from original, extended)
-            ------------------------------ */
-            function getVal(obj, keys, def = 0) {
-                if (!obj) return def;
-                for (const k of keys) if (obj[k] !== undefined) return obj[k];
-                return def;
+            <div>
+                <button id="exportPdf" class="btn outline">Export PDF</button>
+                <button id="downloadCsv" class="btn outline">Export CSV</button>
+                <button id="refresh" class="btn outline">Refresh</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div id="mainColumn">
+                <!-- Overview / insights inserted here -->
+            </div>
+
+            <div id="sideColumn">
+                <div class="card">
+                    <h3>Quick Snapshot</h3>
+                    <div id="snapshot" class="small"></div>
+                    <div>
+                        <strong>User Selection</strong><br>
+                        Select <strong>User B = None</strong> to disable dual-user comparison mode.
+                        <br><br>
+                    </div>
+
+                </div>
+                <div class="card">
+                    <h3>Legend / Notes</h3>
+                    <div class="small" style="line-height:1.45;">
+                        <strong style="color:#003366;">Quality of Experience (QoE) — Scoring Framework</strong><br>
+                        Composite score (0–100) derived from the weighted contribution of the following KPIs:
+                        <br><br>
+
+                        <span style="font-weight:600;">Voice Call Quality — 35%</span><br>
+                        Based on MOS-driven VoIP performance metrics benchmarked to ITU standards:<br>
+                        &nbsp;&nbsp;• One-Way Latency: ≤ 150 ms target<br>
+                        &nbsp;&nbsp;• Jitter: ≤ 30 ms target<br>
+                        &nbsp;&nbsp;• Packet Loss: &lt; 1% target<br>
+                        <br>
+
+                        <span style="font-weight:600;">YouTube Streaming — 30%</span><br>
+                        Evaluates playback continuity and visual quality:<br>
+                        &nbsp;&nbsp;• Startup Delay: ≤ 3 sec<br>
+                        &nbsp;&nbsp;• Rebuffering Ratio: &lt; 1%<br>
+                        &nbsp;&nbsp;• HD / FHD resolution sustainability<br>
+                        <br>
+
+                        <span style="font-weight:600;">Speed & Throughput — 20%</span><br>
+                        Measures real-world capacity delivery vs service baseline:<br>
+                        &nbsp;&nbsp;• Download / Upload stability<br>
+                        &nbsp;&nbsp;• Performance under peak load periods<br>
+                        <br>
+
+                        <span style="font-weight:600;">Local Video Playback — 15%</span><br>
+                        Indicates device-side and in-home network stability:<br>
+                        &nbsp;&nbsp;• Playback stalls<br>
+                        &nbsp;&nbsp;• Frame rendering drops<br>
+                        <br>
+
+                        <strong>Worst 10-Second Window</strong><br>
+                        Automatically detected segment identifying the lowest user-perceived performance in each test.
+                        <br><br>
+
+                        <strong>QoE Rating Scale</strong><br>
+                        <span style="color:#00732f;">• ≥ 80 — Acceptable / Good User Experience</span><br>
+                        <span style="color:#b8860b;">• 60–79 — Degraded / Impactful Issues</span><br>
+                        <span style="color:#a00000;">• &lt; 60 — Poor User Experience</span><br><br>
+
+                        <span style="font-size:smaller; color:#555;">
+                            *If  want any logic changes, please mail at
+                            <a href="mailto:Sagar.Samrat@airtel.com">Sagar.Samrat@airtel.com</a>.
+                        </span>
+                    </div>
+                </div>
+
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ------------------------------
+        Config & Globals
+        ------------------------------ */
+        const API_URL = 'https://qoe-backend-zr50.onrender.com/api/users/results';
+        let allData = [];
+        const charts = {}; // store Chart.js instances keyed by id
+
+        /* ------------------------------
+        Utilities (kept from original, extended)
+        ------------------------------ */
+        function getVal(obj, keys, def = 0) {
+            if (!obj) return def;
+            for (const k of keys) if (obj[k] !== undefined) return obj[k];
+            return def;
+        }
+        function sanitizeId(s) { return String(s || '').replace(/[@.]/g, '-').replace(/[^a-zA-Z0-9-_]/g, ''); }
+        function toDate(t) { const d = t ? new Date(t) : null; return (d && !isNaN(d)) ? d : null; }
+
+        function seriesFor(records, path) {
+            const arr = records.slice().sort((a, b) => (toDate(a.ts) || 0) - (toDate(b.ts) || 0));
+            const out = [];
+            for (const r of arr) {
+                let val = r;
+                for (const k of path) { if (val) val = val[k]; else break; }
+                const t = toDate(r.ts);
+                if (t && val !== undefined && val !== null && !isNaN(Number(val))) out.push({ t, v: Number(val), raw: r });
             }
-            function sanitizeId(s) { return String(s || '').replace(/[@.]/g, '-').replace(/[^a-zA-Z0-9-_]/g, ''); }
-            function toDate(t) { const d = t ? new Date(t) : null; return (d && !isNaN(d)) ? d : null; }
+            return out;
+        }
 
-            function seriesFor(records, path) {
-                const arr = records.slice().sort((a, b) => (toDate(a.ts) || 0) - (toDate(b.ts) || 0));
-                const out = [];
-                for (const r of arr) {
-                    let val = r;
-                    for (const k of path) { if (val) val = val[k]; else break; }
-                    const t = toDate(r.ts);
-                    if (t && val !== undefined && val !== null && !isNaN(Number(val))) out.push({ t, v: Number(val), raw: r });
-                }
-                return out;
-            }
+        function computeAverages(records) {
+            const avg = {
+                voip: { MOS: 0, latencyMs: 0, jitter: 0, packetsLost: 0 },
+                local: { startup: 0, avgBufferAhead: 0, freezeCount: 0, freezeDuration: 0 },
+                youtube: { startup: 0, freezeCount: 0, freezeDuration: 0 },
+                speed: { download: 0, upload: 0, ping: 0 }
+            };
+            const n = records.length || 1;
+            records.forEach(r => {
+                avg.voip.MOS += getVal(r.voip, ['MOS', 'mos']);
+                avg.voip.latencyMs += getVal(r.voip, ['latencyMs', 'latency']);
+                avg.voip.jitter += getVal(r.voip, ['avgJitterMs', 'jitter']);
+                avg.voip.packetsLost += getVal(r.voip, ['packetsLost', 'loss', 'lossPercent']);
 
-            function computeAverages(records) {
-                const avg = {
-                    voip: { MOS: 0, latencyMs: 0, jitter: 0, packetsLost: 0 },
-                    local: { startup: 0, avgBufferAhead: 0, freezeCount: 0, freezeDuration: 0 },
-                    youtube: { startup: 0, freezeCount: 0, freezeDuration: 0 },
-                    speed: { download: 0, upload: 0, ping: 0 }
-                };
-                const n = records.length || 1;
-                records.forEach(r => {
-                    avg.voip.MOS += getVal(r.voip, ['MOS', 'mos']);
-                    avg.voip.latencyMs += getVal(r.voip, ['latencyMs', 'latency']);
-                    avg.voip.jitter += getVal(r.voip, ['avgJitterMs', 'jitter']);
-                    avg.voip.packetsLost += getVal(r.voip, ['packetsLost', 'loss', 'lossPercent']);
+                avg.local.startup += getVal(r.local, ['startup']);
+                avg.local.avgBufferAhead += getVal(r.local, ['avgBufferAhead']);
+                avg.local.freezeCount += getVal(r.local, ['freezeCount', 'stalls']);
+                avg.local.freezeDuration += getVal(r.local, ['freezeDuration', 'totalStall']);
 
-                    avg.local.startup += getVal(r.local, ['startup']);
-                    avg.local.avgBufferAhead += getVal(r.local, ['avgBufferAhead']);
-                    avg.local.freezeCount += getVal(r.local, ['freezeCount', 'stalls']);
-                    avg.local.freezeDuration += getVal(r.local, ['freezeDuration', 'totalStall']);
+                avg.youtube.startup += getVal(r.youtube, ['startup']);
+                avg.youtube.freezeCount += getVal(r.youtube, ['freezeCount', 'stalls']);
+                avg.youtube.freezeDuration += getVal(r.youtube, ['freezeDuration', 'totalStall']);
 
-                    avg.youtube.startup += getVal(r.youtube, ['startup']);
-                    avg.youtube.freezeCount += getVal(r.youtube, ['freezeCount', 'stalls']);
-                    avg.youtube.freezeDuration += getVal(r.youtube, ['freezeDuration', 'totalStall']);
-
-                    avg.speed.download += getVal(r.speed, ['download']);
-                    avg.speed.upload += getVal(r.speed, ['upload']);
-                    avg.speed.ping += getVal(r.speed, ['ping']);
+                avg.speed.download += getVal(r.speed, ['download']);
+                avg.speed.upload += getVal(r.speed, ['upload']);
+                avg.speed.ping += getVal(r.speed, ['ping']);
+            });
+            Object.keys(avg).forEach(k => {
+                Object.keys(avg[k]).forEach(f => {
+                    avg[k][f] = +(avg[k][f] / n).toFixed(2);
+                    if (isNaN(avg[k][f])) avg[k][f] = 0;
                 });
-                Object.keys(avg).forEach(k => {
-                    Object.keys(avg[k]).forEach(f => {
-                        avg[k][f] = +(avg[k][f] / n).toFixed(2);
-                        if (isNaN(avg[k][f])) avg[k][f] = 0;
-                    });
+            });
+            return avg;
+        }
+
+        /* ------------------------------
+        Worst 10s window detection (enhanced)
+        returns {start, end, score, points, deltaFromMA, hint}
+        ------------------------------ */
+        function worstWindow(points, seconds = 10) {
+            if (!points || points.length === 0) return null;
+            let best = { score: -Infinity, start: null, end: null, points: [] };
+            let i = 0, j = 0, sum = 0;
+            while (i < points.length) {
+                const startT = points[i].t;
+                while (j < points.length && (points[j].t - startT) <= seconds * 1000) {
+                    sum += points[j].v;
+                    j++;
+                }
+                if (sum > best.score) {
+                    best.score = sum;
+                    best.start = startT;
+                    best.end = points[Math.max(0, j - 1)].t;
+                    best.points = points.slice(i, j);
+                }
+                sum -= points[i].v;
+                i++;
+            }
+            if (best.score === -Infinity) return null;
+
+            // delta vs moving average around window (30s window centered)
+            const windowMid = new Date((best.start.getTime() + best.end.getTime()) / 2);
+            // compute MA for +/-30s
+            const windowStart = new Date(windowMid.getTime() - 30 * 1000);
+            const windowEnd = new Date(windowMid.getTime() + 30 * 1000);
+            const surrounding = points.filter(p => p.t >= windowStart && p.t <= windowEnd);
+            const ma = surrounding.length ? surrounding.reduce((s, p) => s + p.v, 0) / surrounding.length : 0;
+            const winAvg = best.points.length ? best.points.reduce((s, p) => s + p.v, 0) / best.points.length : 0;
+            const delta = winAvg - ma;
+
+            // hint heuristics
+            let hint = '';
+            if (delta > Math.max(5, Math.abs(ma) * 0.25)) hint = 'Sudden spike vs baseline — possible congestion / interference';
+            else if (delta < -Math.max(5, Math.abs(ma) * 0.25)) hint = 'Drop below baseline — possible temporary outage or measurement artifact';
+            else hint = 'Transient fluctuation';
+
+            return { ...best, deltaFromMA: +delta.toFixed(2), hint };
+        }
+
+        /* ------------------------------
+        Chart helpers (keeps behavior, also supports sparkline)
+        ------------------------------ */
+        function destroyChartIfAny(canvas) {
+            if (!canvas) return;
+            if (canvas._chart) try { canvas._chart.destroy(); } catch (e) { }
+        }
+
+        function drawLine(ctxId, points, label, yLabel, highlightWindow = null, color = "#3b82f6", isSpark = false) {
+            const canvas = document.getElementById(ctxId);
+            if (!canvas) return null;
+            destroyChartIfAny(canvas);
+            const labels = points.map(p => p.t.toLocaleTimeString());
+            const data = points.map(p => p.v);
+            const displayLabels = labels.length === 1 ? [labels[0], labels[0]] : labels;
+            const displayData = data.length === 1 ? [data[0], data[0]] : data;
+
+            const datasets = [{
+                label, data: displayData, fill: false, tension: 0.25,
+                pointRadius: isSpark ? 0 : 3, borderWidth: isSpark ? 2 : 2, borderColor: color
+            }];
+
+            if (highlightWindow && highlightWindow.points && highlightWindow.points.length) {
+                const winData = displayData.map(_ => null);
+                highlightWindow.points.forEach(pt => {
+                    const idx = points.findIndex(p => p.t.getTime() === pt.t.getTime() && p.v === pt.v);
+                    if (idx >= 0) winData[idx] = displayData[idx];
                 });
-                return avg;
+                datasets.push({ label: label + " (worst)", data: winData, type: 'line', pointRadius: 4, borderWidth: 0, backgroundColor: 'rgba(255,99,132,0.2)', showLine: false });
             }
 
-            /* ------------------------------
-            Worst 10s window detection (enhanced)
-            returns {start, end, score, points, deltaFromMA, hint}
-            ------------------------------ */
-            function worstWindow(points, seconds = 10) {
-                if (!points || points.length === 0) return null;
-                let best = { score: -Infinity, start: null, end: null, points: [] };
-                let i = 0, j = 0, sum = 0;
-                while (i < points.length) {
-                    const startT = points[i].t;
-                    while (j < points.length && (points[j].t - startT) <= seconds * 1000) {
-                        sum += points[j].v;
-                        j++;
-                    }
-                    if (sum > best.score) {
-                        best.score = sum;
-                        best.start = startT;
-                        best.end = points[Math.max(0, j - 1)].t;
-                        best.points = points.slice(i, j);
-                    }
-                    sum -= points[i].v;
-                    i++;
+            const options = {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                elements: { line: { tension: 0.3 } },
+                scales: {
+                    x: { display: !isSpark },
+                    y: { beginAtZero: true, title: { display: !!yLabel, text: yLabel } }
                 }
-                if (best.score === -Infinity) return null;
+            };
 
-                // delta vs moving average around window (30s window centered)
-                const windowMid = new Date((best.start.getTime() + best.end.getTime()) / 2);
-                // compute MA for +/-30s
-                const windowStart = new Date(windowMid.getTime() - 30 * 1000);
-                const windowEnd = new Date(windowMid.getTime() + 30 * 1000);
-                const surrounding = points.filter(p => p.t >= windowStart && p.t <= windowEnd);
-                const ma = surrounding.length ? surrounding.reduce((s, p) => s + p.v, 0) / surrounding.length : 0;
-                const winAvg = best.points.length ? best.points.reduce((s, p) => s + p.v, 0) / best.points.length : 0;
-                const delta = winAvg - ma;
+            const chart = new Chart(canvas, { type: 'line', data: { labels: displayLabels, datasets }, options });
+            canvas._chart = chart;
+            return chart;
+        }
 
-                // hint heuristics
-                let hint = '';
-                if (delta > Math.max(5, Math.abs(ma) * 0.25)) hint = 'Sudden spike vs baseline — possible congestion / interference';
-                else if (delta < -Math.max(5, Math.abs(ma) * 0.25)) hint = 'Drop below baseline — possible temporary outage or measurement artifact';
-                else hint = 'Transient fluctuation';
+        /* ------------------------------
+        New insights: QoE score, stability, reliability, alerts, bottlenecks
+        ------------------------------ */
+        function computeQoEScore(avg) {
+            // weights
+            const w = { voip: 0.35, youtube: 0.30, speed: 0.20, local: 0.15 };
 
-                return { ...best, deltaFromMA: +delta.toFixed(2), hint };
-            }
+            // voip score (0-100): MOS influence and penalties for latency & loss
+            const mosNorm = Math.max(0, Math.min(100, (avg.voip.MOS / 5) * 100));
+            const latencyPenalty = Math.min(50, (avg.voip.latencyMs / 200) * 50); // larger latency reduces score
+            const lossPenalty = Math.min(40, avg.voip.packetsLost * 8); // each % loss significant
+            const voipScore = Math.max(0, mosNorm - latencyPenalty - lossPenalty);
 
-            /* ------------------------------
-            Chart helpers (keeps behavior, also supports sparkline)
-            ------------------------------ */
-            function destroyChartIfAny(canvas) {
-                if (!canvas) return;
-                if (canvas._chart) try { canvas._chart.destroy(); } catch (e) { }
-            }
+            // youtube score
+            const ytPenalty = Math.min(60, avg.youtube.freezeDuration * 3 + avg.youtube.freezeCount * 8);
+            const ytScore = Math.max(0, 100 - ytPenalty - (avg.youtube.startup / 2000) * 10);
 
-            function drawLine(ctxId, points, label, yLabel, highlightWindow = null, color = "#3b82f6", isSpark = false) {
-                const canvas = document.getElementById(ctxId);
-                if (!canvas) return null;
-                destroyChartIfAny(canvas);
-                const labels = points.map(p => p.t.toLocaleTimeString());
-                const data = points.map(p => p.v);
-                const displayLabels = labels.length === 1 ? [labels[0], labels[0]] : labels;
-                const displayData = data.length === 1 ? [data[0], data[0]] : data;
+            // speed score (favor download)
+            const dl = avg.speed.download || 0;
+            const ul = avg.speed.upload || 0;
+            const spScore = Math.max(0, Math.min(100, (Math.min(dl / 100, 1) * 70) + (Math.min(ul / 20, 1) * 30)));
 
-                const datasets = [{
-                    label, data: displayData, fill: false, tension: 0.25,
-                    pointRadius: isSpark ? 0 : 3, borderWidth: isSpark ? 2 : 2, borderColor: color
-                }];
+            // local video score
+            const localPenalty = Math.min(60, avg.local.freezeCount * 10 + (avg.local.freezeDuration / 3));
+            const localScore = Math.max(0, 100 - localPenalty - (avg.local.avgBufferAhead < 5 ? (5 - avg.local.avgBufferAhead) * 5 : 0));
 
-                if (highlightWindow && highlightWindow.points && highlightWindow.points.length) {
-                    const winData = displayData.map(_ => null);
-                    highlightWindow.points.forEach(pt => {
-                        const idx = points.findIndex(p => p.t.getTime() === pt.t.getTime() && p.v === pt.v);
-                        if (idx >= 0) winData[idx] = displayData[idx];
-                    });
-                    datasets.push({ label: label + " (worst)", data: winData, type: 'line', pointRadius: 4, borderWidth: 0, backgroundColor: 'rgba(255,99,132,0.2)', showLine: false });
-                }
+            const total = Math.round(voipScore * w.voip + ytScore * w.youtube + spScore * w.speed + localScore * w.local);
+            return { score: Math.max(0, Math.min(100, total)), breakdown: { voip: +voipScore.toFixed(1), youtube: +ytScore.toFixed(1), speed: +spScore.toFixed(1), local: +localScore.toFixed(1) } };
+        }
 
-                const options = {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    elements: { line: { tension: 0.3 } },
-                    scales: {
-                        x: { display: !isSpark },
-                        y: { beginAtZero: true, title: { display: !!yLabel, text: yLabel } }
-                    }
+        function stabilityIndex(series) {
+            if (!series || !series.length) return 100;
+            const values = series.map(p => p.v);
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+            const std = Math.sqrt(variance);
+            // scale: lower std => higher stability; heuristic scaling
+            const idx = Math.max(0, Math.min(100, 100 - std * 6));
+            return +idx.toFixed(2);
+        }
+
+        function sessionReliability(records) {
+            // compute percent of records meeting baseline across tests
+            if (!records || !records.length) return 0;
+            const baseline = {
+                voipLatency: 150, // ms
+                voipLoss: 3, // %
+                youtubeFreezeDuration: 5, // s
+                download: 10 // Mbps
+            };
+            let ok = 0;
+            records.forEach(r => {
+                const pass = (getVal(r.voip, ['latencyMs', 'latency']) <= baseline.voipLatency)
+                    && (getVal(r.voip, ['packetsLost']) <= baseline.voipLoss)
+                    && (getVal(r.youtube, ['freezeDuration']) <= baseline.youtubeFreezeDuration)
+                    && (getVal(r.speed, ['download']) >= baseline.download);
+                if (pass) ok++;
+            });
+            return +(ok / records.length * 100).toFixed(2);
+        }
+
+        function detectAlerts(avg, seriesMap) {
+            const alerts = [];
+            if (avg.voip.latencyMs > 300) alerts.push({ level: 'high', text: `High VoIP latency ${avg.voip.latencyMs} ms` });
+            else if (avg.voip.latencyMs > 200) alerts.push({ level: 'warn', text: `Elevated VoIP latency ${avg.voip.latencyMs} ms` });
+            if (avg.voip.packetsLost > 1) alerts.push({ level: 'warn', text: `Packet loss ${avg.voip.packetsLost}%` });
+            if (avg.youtube.freezeCount > 2 || avg.youtube.freezeDuration > 8) alerts.push({ level: 'high', text: `YouTube rebuffering (${avg.youtube.freezeCount} freezes / ${avg.youtube.freezeDuration}s)` });
+            if (avg.speed.download < 10) alerts.push({ level: 'high', text: `Low download speed ${avg.speed.download} Mbps` });
+            // worst windows causing alerts
+            ['voip', 'local', 'youtube', 'speed'].forEach(k => {
+                const w = seriesMap[k] && seriesMap[k].worst;
+                if (w && w.deltaFromMA && Math.abs(w.deltaFromMA) > 10) alerts.push({ level: 'info', text: `${k.toUpperCase()} worst window: ${w.hint} (Δ ${w.deltaFromMA})` });
+            });
+            return alerts;
+        }
+
+        function detectBottlenecks(avg) {
+            const issues = [];
+            if (avg.voip.packetsLost > 1 || avg.voip.jitter > 50) issues.push({ type: 'RF / Local Wi-Fi', reason: `High jitter ${avg.voip.jitter}ms or loss ${avg.voip.packetsLost}%` });
+            if (avg.speed.download < 30) issues.push({ type: 'Backhaul/ISP', reason: `Low download ${avg.speed.download} Mbps` });
+            if (avg.local.avgBufferAhead < 5 || avg.youtube.freezeCount > 1) issues.push({ type: 'Client / App', reason: `Low buffer ${avg.local.avgBufferAhead}s or freezes` });
+            if (!issues.length) issues.push({ type: 'None', reason: 'No clear bottleneck detected' });
+            return issues.slice(0, 3);
+        }
+
+        /* ------------------------------
+        Render logic (extended with insights)
+        ------------------------------ */
+        function renderForUsers(recordsA, recordsB = null) {
+            const main = document.getElementById('mainColumn');
+            main.innerHTML = '';
+
+            const avgA = computeAverages(recordsA || []);
+            const seriesA = {
+                voip: { pts: seriesFor(recordsA, ['voip', 'latencyMs']) },
+                mos: { pts: seriesFor(recordsA, ['voip', 'MOS']) },
+                localBuffer: { pts: seriesFor(recordsA, ['local', 'avgBufferAhead']) },
+                localFreeze: { pts: seriesFor(recordsA, ['local', 'freezeCount']) },
+                ytStartup: { pts: seriesFor(recordsA, ['youtube', 'startup']) },
+                ytFreezeDur: { pts: seriesFor(recordsA, ['youtube', 'freezeDuration']) },
+                speedDL: { pts: seriesFor(recordsA, ['speed', 'download']) },
+                speedUL: { pts: seriesFor(recordsA, ['speed', 'upload']) }
+            };
+            const worstA = {
+                voip: worstWindow(seriesA.voip.pts, 10),
+                mos: worstWindow(seriesA.mos.pts, 10),
+                local: worstWindow(seriesA.localFreeze.pts, 10) || worstWindow(seriesA.localBuffer.pts, 10),
+                youtube: worstWindow(seriesA.ytFreezeDur.pts, 10),
+                speed: worstWindow(seriesA.speedDL.pts, 10) || worstWindow(seriesA.speedUL.pts, 10)
+            };
+
+            let avgB = null, seriesB = null, worstB = null;
+            if (recordsB) {
+                avgB = computeAverages(recordsB || []);
+                seriesB = {
+                    voip: { pts: seriesFor(recordsB, ['voip', 'latencyMs']) },
+                    mos: { pts: seriesFor(recordsB, ['voip', 'MOS']) },
+                    localBuffer: { pts: seriesFor(recordsB, ['local', 'avgBufferAhead']) },
+                    localFreeze: { pts: seriesFor(recordsB, ['local', 'freezeCount']) },
+                    ytStartup: { pts: seriesFor(recordsB, ['youtube', 'startup']) },
+                    ytFreezeDur: { pts: seriesFor(recordsB, ['youtube', 'freezeDuration']) },
+                    speedDL: { pts: seriesFor(recordsB, ['speed', 'download']) },
+                    speedUL: { pts: seriesFor(recordsB, ['speed', 'upload']) }
                 };
-
-                const chart = new Chart(canvas, { type: 'line', data: { labels: displayLabels, datasets }, options });
-                canvas._chart = chart;
-                return chart;
-            }
-
-            /* ------------------------------
-            New insights: QoE score, stability, reliability, alerts, bottlenecks
-            ------------------------------ */
-            function computeQoEScore(avg) {
-                // weights
-                const w = { voip: 0.35, youtube: 0.30, speed: 0.20, local: 0.15 };
-
-                // voip score (0-100): MOS influence and penalties for latency & loss
-                const mosNorm = Math.max(0, Math.min(100, (avg.voip.MOS / 5) * 100));
-                const latencyPenalty = Math.min(50, (avg.voip.latencyMs / 200) * 50); // larger latency reduces score
-                const lossPenalty = Math.min(40, avg.voip.packetsLost * 8); // each % loss significant
-                const voipScore = Math.max(0, mosNorm - latencyPenalty - lossPenalty);
-
-                // youtube score
-                const ytPenalty = Math.min(60, avg.youtube.freezeDuration * 3 + avg.youtube.freezeCount * 8);
-                const ytScore = Math.max(0, 100 - ytPenalty - (avg.youtube.startup / 2000) * 10);
-
-                // speed score (favor download)
-                const dl = avg.speed.download || 0;
-                const ul = avg.speed.upload || 0;
-                const spScore = Math.max(0, Math.min(100, (Math.min(dl / 100, 1) * 70) + (Math.min(ul / 20, 1) * 30)));
-
-                // local video score
-                const localPenalty = Math.min(60, avg.local.freezeCount * 10 + (avg.local.freezeDuration / 3));
-                const localScore = Math.max(0, 100 - localPenalty - (avg.local.avgBufferAhead < 5 ? (5 - avg.local.avgBufferAhead) * 5 : 0));
-
-                const total = Math.round(voipScore * w.voip + ytScore * w.youtube + spScore * w.speed + localScore * w.local);
-                return { score: Math.max(0, Math.min(100, total)), breakdown: { voip: +voipScore.toFixed(1), youtube: +ytScore.toFixed(1), speed: +spScore.toFixed(1), local: +localScore.toFixed(1) } };
-            }
-
-            function stabilityIndex(series) {
-                if (!series || !series.length) return 100;
-                const values = series.map(p => p.v);
-                const mean = values.reduce((a, b) => a + b, 0) / values.length;
-                const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
-                const std = Math.sqrt(variance);
-                // scale: lower std => higher stability; heuristic scaling
-                const idx = Math.max(0, Math.min(100, 100 - std * 6));
-                return +idx.toFixed(2);
-            }
-
-            function sessionReliability(records) {
-                // compute percent of records meeting baseline across tests
-                if (!records || !records.length) return 0;
-                const baseline = {
-                    voipLatency: 150, // ms
-                    voipLoss: 3, // %
-                    youtubeFreezeDuration: 5, // s
-                    download: 10 // Mbps
+                worstB = {
+                    voip: worstWindow(seriesB.voip.pts, 10),
+                    mos: worstWindow(seriesB.mos.pts, 10),
+                    local: worstWindow(seriesB.localFreeze.pts, 10) || worstWindow(seriesB.localBuffer.pts, 10),
+                    youtube: worstWindow(seriesB.ytFreezeDur.pts, 10),
+                    speed: worstWindow(seriesB.speedDL.pts, 10) || worstWindow(seriesB.speedUL.pts, 10)
                 };
-                let ok = 0;
-                records.forEach(r => {
-                    const pass = (getVal(r.voip, ['latencyMs', 'latency']) <= baseline.voipLatency)
-                        && (getVal(r.voip, ['packetsLost']) <= baseline.voipLoss)
-                        && (getVal(r.youtube, ['freezeDuration']) <= baseline.youtubeFreezeDuration)
-                        && (getVal(r.speed, ['download']) >= baseline.download);
-                    if (pass) ok++;
-                });
-                return +(ok / records.length * 100).toFixed(2);
             }
 
-            function detectAlerts(avg, seriesMap) {
-                const alerts = [];
-                if (avg.voip.latencyMs > 200) alerts.push({ level: 'high', text: `High VoIP latency ${avg.voip.latencyMs} ms` });
-                else if (avg.voip.latencyMs > 120) alerts.push({ level: 'warn', text: `Elevated VoIP latency ${avg.voip.latencyMs} ms` });
-                if (avg.voip.packetsLost > 1) alerts.push({ level: 'warn', text: `Packet loss ${avg.voip.packetsLost}%` });
-                if (avg.youtube.freezeCount > 2 || avg.youtube.freezeDuration > 8) alerts.push({ level: 'high', text: `YouTube rebuffering (${avg.youtube.freezeCount} freezes / ${avg.youtube.freezeDuration}s)` });
-                if (avg.speed.download < 10) alerts.push({ level: 'high', text: `Low download speed ${avg.speed.download} Mbps` });
-                // worst windows causing alerts
-                ['voip', 'local', 'youtube', 'speed'].forEach(k => {
-                    const w = seriesMap[k] && seriesMap[k].worst;
-                    if (w && w.deltaFromMA && Math.abs(w.deltaFromMA) > 10) alerts.push({ level: 'info', text: `${k.toUpperCase()} worst window: ${w.hint} (Δ ${w.deltaFromMA})` });
-                });
-                return alerts;
+            // INSIGHT: QoE Score tiles for A (and B)
+            const qA = computeQoEScore(avgA);
+            const stabA_voip = stabilityIndex(seriesA.voip.pts);
+            const stabA_speed = stabilityIndex(seriesA.speedDL.pts);
+            const reliA = sessionReliability(recordsA);
+            const alertsA = detectAlerts(avgA, { voip: worstA.voip, local: worstA.local, youtube: worstA.youtube, speed: worstA.speed });
+            const bottA = detectBottlenecks(avgA);
+
+            let qB = null, stabB_voip = null, stabB_speed = null, reliB = null, alertsB = [], bottB = null;
+            if (recordsB) {
+                qB = computeQoEScore(avgB);
+                stabB_voip = stabilityIndex(seriesB.voip.pts);
+                stabB_speed = stabilityIndex(seriesB.speedDL.pts);
+                reliB = sessionReliability(recordsB);
+                alertsB = detectAlerts(avgB, { voip: worstB.voip, local: worstB.local, youtube: worstB.youtube, speed: worstB.speed });
+                bottB = detectBottlenecks(avgB);
             }
 
-            function detectBottlenecks(avg) {
-                const issues = [];
-                if (avg.voip.packetsLost > 1 || avg.voip.jitter > 50) issues.push({ type: 'RF / Local Wi-Fi', reason: `High jitter ${avg.voip.jitter}ms or loss ${avg.voip.packetsLost}%` });
-                if (avg.speed.download < 30) issues.push({ type: 'Backhaul/ISP', reason: `Low download ${avg.speed.download} Mbps` });
-                if (avg.local.avgBufferAhead < 5 || avg.youtube.freezeCount > 1) issues.push({ type: 'Client / App', reason: `Low buffer ${avg.local.avgBufferAhead}s or freezes` });
-                if (!issues.length) issues.push({ type: 'None', reason: 'No clear bottleneck detected' });
-                return issues.slice(0, 3);
-            }
-
-            /* ------------------------------
-            Render logic (extended with insights)
-            ------------------------------ */
-            function renderForUsers(recordsA, recordsB = null) {
-                const main = document.getElementById('mainColumn');
-                main.innerHTML = '';
-
-                const avgA = computeAverages(recordsA || []);
-                const seriesA = {
-                    voip: { pts: seriesFor(recordsA, ['voip', 'latencyMs']) },
-                    mos: { pts: seriesFor(recordsA, ['voip', 'MOS']) },
-                    localBuffer: { pts: seriesFor(recordsA, ['local', 'avgBufferAhead']) },
-                    localFreeze: { pts: seriesFor(recordsA, ['local', 'freezeCount']) },
-                    ytStartup: { pts: seriesFor(recordsA, ['youtube', 'startup']) },
-                    ytFreezeDur: { pts: seriesFor(recordsA, ['youtube', 'freezeDuration']) },
-                    speedDL: { pts: seriesFor(recordsA, ['speed', 'download']) },
-                    speedUL: { pts: seriesFor(recordsA, ['speed', 'upload']) }
-                };
-                const worstA = {
-                    voip: worstWindow(seriesA.voip.pts, 10),
-                    mos: worstWindow(seriesA.mos.pts, 10),
-                    local: worstWindow(seriesA.localFreeze.pts, 10) || worstWindow(seriesA.localBuffer.pts, 10),
-                    youtube: worstWindow(seriesA.ytFreezeDur.pts, 10),
-                    speed: worstWindow(seriesA.speedDL.pts, 10) || worstWindow(seriesA.speedUL.pts, 10)
-                };
-
-                let avgB = null, seriesB = null, worstB = null;
-                if (recordsB) {
-                    avgB = computeAverages(recordsB || []);
-                    seriesB = {
-                        voip: { pts: seriesFor(recordsB, ['voip', 'latencyMs']) },
-                        mos: { pts: seriesFor(recordsB, ['voip', 'MOS']) },
-                        localBuffer: { pts: seriesFor(recordsB, ['local', 'avgBufferAhead']) },
-                        localFreeze: { pts: seriesFor(recordsB, ['local', 'freezeCount']) },
-                        ytStartup: { pts: seriesFor(recordsB, ['youtube', 'startup']) },
-                        ytFreezeDur: { pts: seriesFor(recordsB, ['youtube', 'freezeDuration']) },
-                        speedDL: { pts: seriesFor(recordsB, ['speed', 'download']) },
-                        speedUL: { pts: seriesFor(recordsB, ['speed', 'upload']) }
-                    };
-                    worstB = {
-                        voip: worstWindow(seriesB.voip.pts, 10),
-                        mos: worstWindow(seriesB.mos.pts, 10),
-                        local: worstWindow(seriesB.localFreeze.pts, 10) || worstWindow(seriesB.localBuffer.pts, 10),
-                        youtube: worstWindow(seriesB.ytFreezeDur.pts, 10),
-                        speed: worstWindow(seriesB.speedDL.pts, 10) || worstWindow(seriesB.speedUL.pts, 10)
-                    };
-                }
-
-                // INSIGHT: QoE Score tiles for A (and B)
-                const qA = computeQoEScore(avgA);
-                const stabA_voip = stabilityIndex(seriesA.voip.pts);
-                const stabA_speed = stabilityIndex(seriesA.speedDL.pts);
-                const reliA = sessionReliability(recordsA);
-                const alertsA = detectAlerts(avgA, { voip: worstA.voip, local: worstA.local, youtube: worstA.youtube, speed: worstA.speed });
-                const bottA = detectBottlenecks(avgA);
-
-                let qB = null, stabB_voip = null, stabB_speed = null, reliB = null, alertsB = [], bottB = null;
-                if (recordsB) {
-                    qB = computeQoEScore(avgB);
-                    stabB_voip = stabilityIndex(seriesB.voip.pts);
-                    stabB_speed = stabilityIndex(seriesB.speedDL.pts);
-                    reliB = sessionReliability(recordsB);
-                    alertsB = detectAlerts(avgB, { voip: worstB.voip, local: worstB.local, youtube: worstB.youtube, speed: worstB.speed });
-                    bottB = detectBottlenecks(avgB);
-                }
-
-                // Overview / KPI tiles
-                const overviewCard = document.createElement('div'); overviewCard.className = 'card full';
-                overviewCard.innerHTML = `
+            // Overview / KPI tiles
+            const overviewCard = document.createElement('div'); overviewCard.className = 'card full';
+            overviewCard.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:10px">
             <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
             <div class="insight-tile" style="min-width:320px">
@@ -761,7 +761,15 @@
                 <div class="small-muted">Overall QoE (A)</div>
                 <div class="big-score">${qA.score}</div>
                 <div class="small-muted">Breakdown: VOIP ${qA.breakdown.voip} · YT ${qA.breakdown.youtube} · SP ${qA.breakdown.speed} · Local ${qA.breakdown.local}</div>
-                <div style="margin-top:6px"><span class="insight-tag ${qA.score >= 80 ? 'good' : (qA.score >= 60 ? 'ok' : 'bad')}">${qA.score >= 80 ? 'EXCELLENT' : (qA.score >= 60 ? 'GOOD' : 'POOR')}</span></div>
+                <div style="margin-top:6px">
+  <span class="insight-tag" 
+        style="padding:4px 8px; border-radius:4px; 
+               background:${qA.score >= 75 ? '#4caf50' : (qA.score >= 65 ? '#8bc34a' : (qA.score >= 55 ? '#ff9800' : '#f44336'))}; 
+               color:#fff;">
+    ${qA.score >= 75 ? 'EXCELLENT' : (qA.score >= 65 ? 'VERY GOOD' : (qA.score >= 55 ? 'GOOD' : 'IMPROVEMENT NEEDED'))}
+  </span>
+</div>
+
                 </div>
                 <div class="tile-right">
                 <div style="display:flex;justify-content:space-between;align-items:center">
@@ -829,30 +837,30 @@
             </div>
         </div>
         `;
-                main.appendChild(overviewCard);
+            main.appendChild(overviewCard);
 
-                // render qoe spark charts (use last N QoE points from records)
-                const qTrendA = (recordsA || []).slice(-30).map(r => {
-                    const avg = computeAverages([r]); // per-record approx
-                    return { t: toDate(r.ts), v: computeQoEScore(avg).score };
-                });
-                const qTrendB = recordsB ? (recordsB || []).slice(-30).map(r => {
-                    const avg = computeAverages([r]);
-                    return { t: toDate(r.ts), v: computeQoEScore(avg).score };
-                }) : [];
+            // render qoe spark charts (use last N QoE points from records)
+            const qTrendA = (recordsA || []).slice(-30).map(r => {
+                const avg = computeAverages([r]); // per-record approx
+                return { t: toDate(r.ts), v: computeQoEScore(avg).score };
+            });
+            const qTrendB = recordsB ? (recordsB || []).slice(-30).map(r => {
+                const avg = computeAverages([r]);
+                return { t: toDate(r.ts), v: computeQoEScore(avg).score };
+            }) : [];
 
-                // create placeholder canvases and draw
-                setTimeout(() => {
-                    const sparkA = document.getElementById('qoeSparkA');
-                    if (sparkA) drawLine('qoeSparkA', qTrendA, 'QoE trend A', '', null, '#0b69ff', true);
-                    const sparkB = document.getElementById('qoeSparkB');
-                    if (sparkB && recordsB) drawLine('qoeSparkB', qTrendB, 'QoE trend B', '', null, '#ef4444', true);
-                }, 60);
+            // create placeholder canvases and draw
+            setTimeout(() => {
+                const sparkA = document.getElementById('qoeSparkA');
+                if (sparkA) drawLine('qoeSparkA', qTrendA, 'QoE trend A', '', null, '#0b69ff', true);
+                const sparkB = document.getElementById('qoeSparkB');
+                if (sparkB && recordsB) drawLine('qoeSparkB', qTrendB, 'QoE trend B', '', null, '#ef4444', true);
+            }, 60);
 
-                // AGGREGATED Overview card done similar to original (compact)
-                const agg = document.createElement('div'); agg.className = 'card full';
-                const recordsBinfo = recordsB ? `• Records B: ${recordsB.length}` : '';
-                agg.innerHTML = `
+            // AGGREGATED Overview card done similar to original (compact)
+            const agg = document.createElement('div'); agg.className = 'card full';
+            const recordsBinfo = recordsB ? `• Records B: ${recordsB.length}` : '';
+            agg.innerHTML = `
         <h3>Aggregated Overview</h3>
         <div class="meta">Records A: ${recordsA.length} ${recordsB ? `• Records B: ${recordsB.length}` : ''}</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px">
@@ -860,7 +868,7 @@
             <div class="small-muted">VoIP MOS (A)</div><div style="font-weight:700"><span class="insight-tag ${avgA.voip.MOS >= 4 ? 'good' : (avgA.voip.MOS >= 3 ? 'ok' : 'bad')}">${avgA.voip.MOS}</span></div>
             </div>
             <div style="padding:8px;border-radius:8px;background:var(--card)">
-            <div class="small-muted">VoIP Latency (A ms)</div><div style="font-weight:700"><span class="insight-tag ${avgA.voip.latencyMs <= 100 ? 'good' : (avgA.voip.latencyMs <= 200 ? 'ok' : 'bad')}">${avgA.voip.latencyMs}</span></div>
+            <div class="small-muted">VoIP Latency (A ms)</div><div style="font-weight:700"><span class="insight-tag ${avgA.voip.latencyMs <= 200 ? 'good' : (avgA.voip.latencyMs <= 300 ? 'ok' : 'bad')}">${avgA.voip.latencyMs}</span></div>
             </div>
             <div style="padding:8px;border-radius:8px;background:var(--card)">
             <div class="small-muted">Download (A Mbps)</div><div style="font-weight:700"><span class="insight-tag ${avgA.speed.download >= 50 ? 'good' : (avgA.speed.download >= 10 ? 'ok' : 'bad')}">${avgA.speed.download}</span></div>
@@ -873,7 +881,7 @@
             <div class="small-muted">VoIP MOS (B)</div><div style="font-weight:700"><span class="insight-tag ${avgB.voip.MOS >= 4 ? 'good' : (avgB.voip.MOS >= 3 ? 'ok' : 'bad')}">${avgB.voip.MOS}</span></div>
             </div>
             <div style="padding:8px;border-radius:8px;background:var(--card)">
-            <div class="small-muted">VoIP Latency (B ms)</div><div style="font-weight:700"><span class="insight-tag ${avgB.voip.latencyMs <= 100 ? 'good' : (avgB.voip.latencyMs <= 200 ? 'ok' : 'bad')}">${avgB.voip.latencyMs}</span></div>
+            <div class="small-muted">VoIP Latency (B ms)</div><div style="font-weight:700"><span class="insight-tag ${avgB.voip.latencyMs <= 200 ? 'good' : (avgB.voip.latencyMs <= 200 ? 'ok' : 'bad')}">${avgB.voip.latencyMs}</span></div>
             </div>
             <div style="padding:8px;border-radius:8px;background:var(--card)">
             <div class="small-muted">Download (B Mbps)</div><div style="font-weight:700"><span class="insight-tag ${avgB.speed.download >= 50 ? 'good' : (avgB.speed.download >= 10 ? 'ok' : 'bad')}">${avgB.speed.download}</span></div>
@@ -885,12 +893,12 @@
         </div>
         <div style="margin-top:10px" class="small-muted">Worst 10s summary shown per section below.</div>
         `;
-                main.appendChild(agg);
+            main.appendChild(agg);
 
-                // Create per-test comparison card generator (re-usable)
-                function createComparisonCard(title, canvasIdA, canvasIdB, ptsA, ptsB, yLabel, worstAwin, worstBwin, summaryAText, summaryBText) {
-                    const card = document.createElement('div'); card.className = 'card';
-                    card.innerHTML = `
+            // Create per-test comparison card generator (re-usable)
+            function createComparisonCard(title, canvasIdA, canvasIdB, ptsA, ptsB, yLabel, worstAwin, worstBwin, summaryAText, summaryBText) {
+                const card = document.createElement('div'); card.className = 'card';
+                card.innerHTML = `
             <h3>${title}</h3>
             <div class="two-col">
             <div>
@@ -905,44 +913,44 @@
             </div>
             </div>
         `;
-                    return { card, ptsA, ptsB, canvasIdA, canvasIdB, yLabel, worstAwin, worstBwin, summaryAText, summaryBText };
-                }
+                return { card, ptsA, ptsB, canvasIdA, canvasIdB, yLabel, worstAwin, worstBwin, summaryAText, summaryBText };
+            }
 
-                    // VOIP comparison
-                    const voipComp = createComparisonCard('VoIP — Latency', 'voipA', 'voipB', seriesA.voip.pts, (seriesB ? seriesB.voip.pts : []), 'ms', worstA.voip, worstB ? worstB.voip : null);
-                    main.appendChild(voipComp.card);
-                    drawLine(voipComp.canvasIdA, seriesA.voip.pts, 'Latency'    , 'ms', worstA.voip, '#3b82f6');
-                    if (recordsB) drawLine(voipComp.canvasIdB, seriesB.voip.pts, 'Latency', 'ms', worstB.voip, '#ef4444');
-                    document.getElementById(voipComp.canvasIdA + '-summary').innerHTML = `<div class="score">MOS ${avgA.voip.MOS} · Latency ${avgA.voip.latencyMs} ms · Jitter ${avgA.voip.jitter} ms</div><div class="recommend small-muted">Rec: ${stabA_voip.length ? stabA_voip.map(a => a.text).join(' · ') : 'No immediate action'}</div><div style="margin-top:6px"><span class="insight-tag ${qA.score >= 80 ? 'good' : (qA.score >= 60 ? 'ok' : 'bad')}">${qA.score >= 60 ? 'GOOD' : 'CHECK'}</span></div>`;
-                    if (recordsB) document.getElementById(voipComp.canvasIdB + '-summary').innerHTML = `<div class="score">MOS ${avgB.voip.MOS} · Latency ${avgB.voip.latencyMs} ms · Jitter ${avgB.voip.jitter} ms</div><div class="recommend small-muted">Rec: ${stabB_voip.length ? stabB_voip.map(a => a.text).join(' · ') : 'No immediate action'}</div><div style="margin-top:6px"><span class="insight-tag ${qB.score >= 80 ? 'good' : (qB.score >= 60 ? 'ok' : 'bad')}">${qB.score >= 60 ? 'GOOD' : 'CHECK'}</span></div>`;
+            // VOIP comparison
+            const voipComp = createComparisonCard('VoIP — Latency', 'voipA', 'voipB', seriesA.voip.pts, (seriesB ? seriesB.voip.pts : []), 'ms', worstA.voip, worstB ? worstB.voip : null);
+            main.appendChild(voipComp.card);
+            drawLine(voipComp.canvasIdA, seriesA.voip.pts, 'Latency', 'ms', worstA.voip, '#3b82f6');
+            if (recordsB) drawLine(voipComp.canvasIdB, seriesB.voip.pts, 'Latency', 'ms', worstB.voip, '#ef4444');
+            document.getElementById(voipComp.canvasIdA + '-summary').innerHTML = `<div class="score">MOS ${avgA.voip.MOS} · Latency ${avgA.voip.latencyMs} ms · Jitter ${avgA.voip.jitter} ms</div><div class="recommend small-muted">Rec: ${stabA_voip.length ? stabA_voip.map(a => a.text).join(' · ') : 'No immediate action'}</div><div style="margin-top:6px"><span class="insight-tag ${qA.score >= 80 ? 'good' : (qA.score >= 60 ? 'ok' : 'bad')}">${qA.score >= 60 ? 'GOOD' : 'CHECK'}</span></div>`;
+            if (recordsB) document.getElementById(voipComp.canvasIdB + '-summary').innerHTML = `<div class="score">MOS ${avgB.voip.MOS} · Latency ${avgB.voip.latencyMs} ms · Jitter ${avgB.voip.jitter} ms</div><div class="recommend small-muted">Rec: ${stabB_voip.length ? stabB_voip.map(a => a.text).join(' · ') : 'No immediate action'}</div><div style="margin-top:6px"><span class="insight-tag ${qB.score >= 80 ? 'good' : (qB.score >= 60 ? 'ok' : 'bad')}">${qB.score >= 60 ? 'GOOD' : 'CHECK'}</span></div>`;
 
-                    // LOCAL comparison
-                    const localComp = createComparisonCard('Local Video — Buffer & Freezes', 'localA', 'localB', seriesA.localBuffer.pts, seriesB ? seriesB.localBuffer.pts : [], 's', worstA.local, worstB ? worstB.local : null);
-                    main.appendChild(localComp.card);
-                    drawLine(localComp.canvasIdA, seriesA.localBuffer.pts, 'Avg Buffer Ahead (s)', 's', worstA.local, '#10b981');
-                    if (recordsB) drawLine(localComp.canvasIdB, seriesB.localBuffer.pts, 'Avg Buffer Ahead (s)', 's', worstB.local, '#ef4444');
-                    document.getElementById(localComp.canvasIdA + '-summary').innerHTML = `<div class="score">Avg buffer ${avgA.local.avgBufferAhead}s · Freezes ${avgA.local.freezeCount}</div><div class="recommend small-muted">Rec: ${bottA.map(b => b.reason).join(' · ')}</div>`;
-                    if (recordsB) document.getElementById(localComp.canvasIdB + '-summary').innerHTML = `<div class="score">Avg buffer ${avgB.local.avgBufferAhead}s · Freezes ${avgB.local.freezeCount}</div><div class="recommend small-muted">Rec: ${bottB.map(b => b.reason).join(' · ')}</div>`;
+            // LOCAL comparison
+            const localComp = createComparisonCard('Local Video — Buffer & Freezes', 'localA', 'localB', seriesA.localBuffer.pts, seriesB ? seriesB.localBuffer.pts : [], 's', worstA.local, worstB ? worstB.local : null);
+            main.appendChild(localComp.card);
+            drawLine(localComp.canvasIdA, seriesA.localBuffer.pts, 'Avg Buffer Ahead (s)', 's', worstA.local, '#10b981');
+            if (recordsB) drawLine(localComp.canvasIdB, seriesB.localBuffer.pts, 'Avg Buffer Ahead (s)', 's', worstB.local, '#ef4444');
+            document.getElementById(localComp.canvasIdA + '-summary').innerHTML = `<div class="score">Avg buffer ${avgA.local.avgBufferAhead}s · Freezes ${avgA.local.freezeCount}</div><div class="recommend small-muted">Rec: ${bottA.map(b => b.reason).join(' · ')}</div>`;
+            if (recordsB) document.getElementById(localComp.canvasIdB + '-summary').innerHTML = `<div class="score">Avg buffer ${avgB.local.avgBufferAhead}s · Freezes ${avgB.local.freezeCount}</div><div class="recommend small-muted">Rec: ${bottB.map(b => b.reason).join(' · ')}</div>`;
 
-                    // YOUTUBE comparison
-                    const ytComp = createComparisonCard('YouTube — Startup & Freeze Dur', 'ytA', 'ytB', seriesA.ytStartup.pts, recordsB ? seriesB.ytStartup.pts : [], 'ms', worstA.youtube, worstB ? worstB.youtube : null);
-                    main.appendChild(ytComp.card);
-                    drawLine(ytComp.canvasIdA, seriesA.ytStartup.pts, 'Startup (ms)', 'ms', worstA.youtube, '#6366f1');
-                    if (recordsB) drawLine(ytComp.canvasIdB, seriesB.ytStartup.pts, 'Startup (ms)', 'ms', worstB.youtube, '#ef4444');
-                    document.getElementById(ytComp.canvasIdA + '-summary').innerHTML = `<div class="score">Startup ${avgA.youtube.startup} ms · Freezes ${avgA.youtube.freezeCount}</div><div class="recommend small-muted">${alertsA.filter(a => a.text.toLowerCase().includes('youtube')).map(a => a.text).join(' · ') || 'Good'}</div>`;
-                    if (recordsB) document.getElementById(ytComp.canvasIdB + '-summary').innerHTML = `<div class="score">Startup ${avgB.youtube.startup} ms · Freezes ${avgB.youtube.freezeCount}</div><div class="recommend small-muted">${alertsB.filter(a => a.text.toLowerCase().includes('youtube')).map(a => a.text).join(' · ') || 'Good'}</div>`;
+            // YOUTUBE comparison
+            const ytComp = createComparisonCard('YouTube — Startup & Freeze Dur', 'ytA', 'ytB', seriesA.ytStartup.pts, recordsB ? seriesB.ytStartup.pts : [], 'ms', worstA.youtube, worstB ? worstB.youtube : null);
+            main.appendChild(ytComp.card);
+            drawLine(ytComp.canvasIdA, seriesA.ytStartup.pts, 'Startup (ms)', 'ms', worstA.youtube, '#6366f1');
+            if (recordsB) drawLine(ytComp.canvasIdB, seriesB.ytStartup.pts, 'Startup (ms)', 'ms', worstB.youtube, '#ef4444');
+            document.getElementById(ytComp.canvasIdA + '-summary').innerHTML = `<div class="score">Startup ${avgA.youtube.startup} ms · Freezes ${avgA.youtube.freezeCount}</div><div class="recommend small-muted">${alertsA.filter(a => a.text.toLowerCase().includes('youtube')).map(a => a.text).join(' · ') || 'Good'}</div>`;
+            if (recordsB) document.getElementById(ytComp.canvasIdB + '-summary').innerHTML = `<div class="score">Startup ${avgB.youtube.startup} ms · Freezes ${avgB.youtube.freezeCount}</div><div class="recommend small-muted">${alertsB.filter(a => a.text.toLowerCase().includes('youtube')).map(a => a.text).join(' · ') || 'Good'}</div>`;
 
-                    // SPEED comparison
-                    const speedComp = createComparisonCard('Speed — Download / Upload', 'spdA', 'spdB', seriesA.speedDL.pts, recordsB ? seriesB.speedDL.pts : [], 'Mbps', worstA.speed, worstB ? worstB.speed : null);
-                    main.appendChild(speedComp.card);
-                    drawLine(speedComp.canvasIdA, seriesA.speedDL.pts, 'Download (Mbps)', 'Mbps', worstA.speed, '#06b6d4');
-                    if (recordsB) drawLine(speedComp.canvasIdB, seriesB.speedDL.pts, 'Download (Mbps)', 'Mbps', worstB.speed, '#ef4444');
-                    document.getElementById(speedComp.canvasIdA + '-summary').innerHTML = `<div class="score">${avgA.speed.download} Mbps DL · ${avgA.speed.upload} Mbps UL</div><div class="recommend small-muted">${alertsA.filter(a => a.text.toLowerCase().includes('download') || a.text.toLowerCase().includes('speed')).map(a => a.text).join(' · ') || 'Good'}</div>`;
-                    if (recordsB) document.getElementById(speedComp.canvasIdB + '-summary').innerHTML = `<div class="score">${avgB.speed.download} Mbps DL · ${avgB.speed.upload} Mbps UL</div><div class="recommend small-muted">${alertsB.filter(a => a.text.toLowerCase().includes('download') || a.text.toLowerCase().includes('speed')).map(a => a.text).join(' · ') || 'Good'}</div>`;
+            // SPEED comparison
+            const speedComp = createComparisonCard('Speed — Download / Upload', 'spdA', 'spdB', seriesA.speedDL.pts, recordsB ? seriesB.speedDL.pts : [], 'Mbps', worstA.speed, worstB ? worstB.speed : null);
+            main.appendChild(speedComp.card);
+            drawLine(speedComp.canvasIdA, seriesA.speedDL.pts, 'Download (Mbps)', 'Mbps', worstA.speed, '#06b6d4');
+            if (recordsB) drawLine(speedComp.canvasIdB, seriesB.speedDL.pts, 'Download (Mbps)', 'Mbps', worstB.speed, '#ef4444');
+            document.getElementById(speedComp.canvasIdA + '-summary').innerHTML = `<div class="score">${avgA.speed.download} Mbps DL · ${avgA.speed.upload} Mbps UL</div><div class="recommend small-muted">${alertsA.filter(a => a.text.toLowerCase().includes('download') || a.text.toLowerCase().includes('speed')).map(a => a.text).join(' · ') || 'Good'}</div>`;
+            if (recordsB) document.getElementById(speedComp.canvasIdB + '-summary').innerHTML = `<div class="score">${avgB.speed.download} Mbps DL · ${avgB.speed.upload} Mbps UL</div><div class="recommend small-muted">${alertsB.filter(a => a.text.toLowerCase().includes('download') || a.text.toLowerCase().includes('speed')).map(a => a.text).join(' · ') || 'Good'}</div>`;
 
-                // Add an insights card listing Alerts & Bottlenecks
-                const insightsCard = document.createElement('div'); insightsCard.className = 'card';
-                insightsCard.innerHTML = `
+            // Add an insights card listing Alerts & Bottlenecks
+            const insightsCard = document.createElement('div'); insightsCard.className = 'card';
+            insightsCard.innerHTML = `
         <h3>Insights & Alerts</h3>
         <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
             <div style="flex:1;min-width:260px">
@@ -965,192 +973,192 @@
             ` : ''}
         </div>
         `;
-                main.appendChild(insightsCard);
+            main.appendChild(insightsCard);
 
-                // update side snapshot
-                const snap = document.getElementById('snapshot');
-                let shtml = `<div><strong>User A</strong>: ${recordsA.length} records</div>`;
-                if (recordsB) shtml += `<div><strong>User B</strong>: ${recordsB.length} records</div>`;
-                snap.innerHTML = shtml;
-            }
+            // update side snapshot
+            const snap = document.getElementById('snapshot');
+            let shtml = `<div><strong>User A</strong>: ${recordsA.length} records</div>`;
+            if (recordsB) shtml += `<div><strong>User B</strong>: ${recordsB.length} records</div>`;
+            snap.innerHTML = shtml;
+        }
 
-            /* ------------------------------
-            Filters & Data load (kept original behavior)
-            ------------------------------ */
-            async function loadData() {
-                const loader = document.getElementById("loader");
-                if (loader) loader.style.display = "flex";
-                try {
-                    const res = await fetch(API_URL);
-                    allData = await res.json();
-                    populateUsers();
-                    applyFilters();
-                } catch (e) {
-                    console.error(e);
-                    document.getElementById('mainColumn').innerHTML = `
+        /* ------------------------------
+        Filters & Data load (kept original behavior)
+        ------------------------------ */
+        async function loadData() {
+            const loader = document.getElementById("loader");
+            if (loader) loader.style.display = "flex";
+            try {
+                const res = await fetch(API_URL);
+                allData = await res.json();
+                populateUsers();
+                applyFilters();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('mainColumn').innerHTML = `
             <div class="card full">
             <h3>Error loading data</h3>
             <div class="meta">Check network / API</div>
             </div>`;
-                }
-                if (loader) {
-                    loader.style.transition = "opacity 0.3s ease";
-                    loader.style.opacity = "0";
-                    setTimeout(() => { loader.style.display = "none"; }, 300);
-                }
+            }
+            if (loader) {
+                loader.style.transition = "opacity 0.3s ease";
+                loader.style.opacity = "0";
+                setTimeout(() => { loader.style.display = "none"; }, 300);
+            }
+        }
+
+        function populateUsers() {
+            const users = [...new Set(allData.map(d => d.email).filter(Boolean))].sort();
+            const a = document.getElementById('userA');
+            const b = document.getElementById('userB');
+            a.innerHTML = '<option value="all">All Users</option>';
+            b.innerHTML = '<option value="none">None</option><option value="all">All Users</option>';
+            users.forEach(u => {
+                const o1 = document.createElement('option'); o1.value = u; o1.text = u; a.appendChild(o1);
+                const o2 = document.createElement('option'); o2.value = u; o2.text = u; b.appendChild(o2);
+            });
+            a.value = 'all'; b.value = 'none';
+        }
+
+        function applyFilters() {
+            const ua = document.getElementById('userA').value;
+            const ub = document.getElementById('userB').value;
+            const from = document.getElementById('fromDate').value;
+            const to = document.getElementById('toDate').value;
+            let filtered = allData.slice();
+
+            if (ua && ua !== 'all') filtered = filtered.filter(r => r.email === ua);
+            if (from) {
+                const s = new Date(from); s.setHours(0, 0, 0, 0);
+                filtered = filtered.filter(r => { const t = toDate(r.ts); return t && t >= s; });
+            }
+            if (to) {
+                const e = new Date(to); e.setHours(23, 59, 59, 999);
+                filtered = filtered.filter(r => { const t = toDate(r.ts); return t && t <= e; });
             }
 
-            function populateUsers() {
-                const users = [...new Set(allData.map(d => d.email).filter(Boolean))].sort();
-                const a = document.getElementById('userA');
-                const b = document.getElementById('userB');
-                a.innerHTML = '<option value="all">All Users</option>';
-                b.innerHTML = '<option value="none">None</option><option value="all">All Users</option>';
-                users.forEach(u => {
-                    const o1 = document.createElement('option'); o1.value = u; o1.text = u; a.appendChild(o1);
-                    const o2 = document.createElement('option'); o2.value = u; o2.text = u; b.appendChild(o2);
-                });
-                a.value = 'all'; b.value = 'none';
-            }
+            let recordsA = filtered;
+            if (ua && ua !== 'all') recordsA = allData.filter(r => r.email === ua).filter(r => {
+                if (from) { const s = new Date(from); s.setHours(0, 0, 0, 0); if (!(toDate(r.ts) && toDate(r.ts) >= s)) return false; }
+                if (to) { const e = new Date(to); e.setHours(23, 59, 59, 999); if (!(toDate(r.ts) && toDate(r.ts) <= e)) return false; }
+                return true;
+            });
 
-            function applyFilters() {
-                const ua = document.getElementById('userA').value;
-                const ub = document.getElementById('userB').value;
-                const from = document.getElementById('fromDate').value;
-                const to = document.getElementById('toDate').value;
-                let filtered = allData.slice();
-
-                if (ua && ua !== 'all') filtered = filtered.filter(r => r.email === ua);
-                if (from) {
-                    const s = new Date(from); s.setHours(0, 0, 0, 0);
-                    filtered = filtered.filter(r => { const t = toDate(r.ts); return t && t >= s; });
-                }
-                if (to) {
-                    const e = new Date(to); e.setHours(23, 59, 59, 999);
-                    filtered = filtered.filter(r => { const t = toDate(r.ts); return t && t <= e; });
-                }
-
-                let recordsA = filtered;
-                if (ua && ua !== 'all') recordsA = allData.filter(r => r.email === ua).filter(r => {
+            let recordsB = null;
+            if (ub && ub !== 'none') {
+                recordsB = allData.filter(r => (ub === 'all' ? true : r.email === ub)).filter(r => {
                     if (from) { const s = new Date(from); s.setHours(0, 0, 0, 0); if (!(toDate(r.ts) && toDate(r.ts) >= s)) return false; }
                     if (to) { const e = new Date(to); e.setHours(23, 59, 59, 999); if (!(toDate(r.ts) && toDate(r.ts) <= e)) return false; }
                     return true;
                 });
-
-                let recordsB = null;
-                if (ub && ub !== 'none') {
-                    recordsB = allData.filter(r => (ub === 'all' ? true : r.email === ub)).filter(r => {
-                        if (from) { const s = new Date(from); s.setHours(0, 0, 0, 0); if (!(toDate(r.ts) && toDate(r.ts) >= s)) return false; }
-                        if (to) { const e = new Date(to); e.setHours(23, 59, 59, 999); if (!(toDate(r.ts) && toDate(r.ts) <= e)) return false; }
-                        return true;
-                    });
-                }
-
-                renderForUsers(recordsA || [], recordsB);
             }
 
-            // CSV download (kept original)
-            function downloadCSV(data = allData) {
-                const headers = [
-                    "_id", "email", "ts",
-                    "voip_ts", "voip_latencyMs", "voip_avgJitterMs", "voip_packetsReceived", "voip_packetsLost", "voip_lossPercent", "voip_MOS", "voip_dcSamples",
-                    "local_ts", "local_startup", "local_stalls", "local_totalStall", "local_freezeCount", "local_freezeDuration", "local_avgBufferAhead", "local_minBufferAhead", "local_maxBufferAhead", "local_bufferRatio", "local_avgStallDuration",
-                    "youtube_ts", "youtube_startup", "youtube_stalls", "youtube_totalStall", "youtube_freezeCount", "youtube_freezeDuration", "youtube_avgBufferAhead", "youtube_minBufferAhead", "youtube_maxBufferAhead", "youtube_bufferRatio",
-                    "speed_download", "speed_upload", "speed_simulated"
+            renderForUsers(recordsA || [], recordsB);
+        }
+
+        // CSV download (kept original)
+        function downloadCSV(data = allData) {
+            const headers = [
+                "_id", "email", "ts",
+                "voip_ts", "voip_latencyMs", "voip_avgJitterMs", "voip_packetsReceived", "voip_packetsLost", "voip_lossPercent", "voip_MOS", "voip_dcSamples",
+                "local_ts", "local_startup", "local_stalls", "local_totalStall", "local_freezeCount", "local_freezeDuration", "local_avgBufferAhead", "local_minBufferAhead", "local_maxBufferAhead", "local_bufferRatio", "local_avgStallDuration",
+                "youtube_ts", "youtube_startup", "youtube_stalls", "youtube_totalStall", "youtube_freezeCount", "youtube_freezeDuration", "youtube_avgBufferAhead", "youtube_minBufferAhead", "youtube_maxBufferAhead", "youtube_bufferRatio",
+                "speed_download", "speed_upload", "speed_simulated"
+            ];
+            const csvRows = [headers.join(",")];
+            data.forEach(row => {
+                const values = [
+                    row._id || '', row.email || '', row.ts || '',
+                    getVal(row.voip, ['ts']), getVal(row.voip, ['latencyMs', 'latency']), getVal(row.voip, ['avgJitterMs', 'jitter']),
+                    getVal(row.voip, ['packetsReceived']), getVal(row.voip, ['packetsLost']), getVal(row.voip, ['lossPercent']),
+                    getVal(row.voip, ['MOS', 'mos']), getVal(row.voip, ['dcSamples']),
+                    getVal(row.local, ['ts']), getVal(row.local, ['startup']), getVal(row.local, ['stalls', 'freezeCount']),
+                    getVal(row.local, ['totalStall']), getVal(row.local, ['freezeCount', 'stalls']), getVal(row.local, ['freezeDuration']),
+                    getVal(row.local, ['avgBufferAhead']), getVal(row.local, ['minBufferAhead']), getVal(row.local, ['maxBufferAhead']),
+                    getVal(row.local, ['bufferRatio']), getVal(row.local, ['avgStallDuration']),
+                    getVal(row.youtube, ['ts']), getVal(row.youtube, ['startup']), getVal(row.youtube, ['stalls', 'freezeCount']),
+                    getVal(row.youtube, ['totalStall']), getVal(row.youtube, ['freezeCount', 'stalls']), getVal(row.youtube, ['freezeDuration']),
+                    getVal(row.youtube, ['avgBufferAhead']), getVal(row.youtube, ['minBufferAhead']), getVal(row.youtube, ['maxBufferAhead']),
+                    getVal(row.youtube, ['bufferRatio']),
+                    getVal(row.speed, ['download']), getVal(row.speed, ['upload']), getVal(row.speed, ['simulated'])
                 ];
-                const csvRows = [headers.join(",")];
-                data.forEach(row => {
-                    const values = [
-                        row._id || '', row.email || '', row.ts || '',
-                        getVal(row.voip, ['ts']), getVal(row.voip, ['latencyMs', 'latency']), getVal(row.voip, ['avgJitterMs', 'jitter']),
-                        getVal(row.voip, ['packetsReceived']), getVal(row.voip, ['packetsLost']), getVal(row.voip, ['lossPercent']),
-                        getVal(row.voip, ['MOS', 'mos']), getVal(row.voip, ['dcSamples']),
-                        getVal(row.local, ['ts']), getVal(row.local, ['startup']), getVal(row.local, ['stalls', 'freezeCount']),
-                        getVal(row.local, ['totalStall']), getVal(row.local, ['freezeCount', 'stalls']), getVal(row.local, ['freezeDuration']),
-                        getVal(row.local, ['avgBufferAhead']), getVal(row.local, ['minBufferAhead']), getVal(row.local, ['maxBufferAhead']),
-                        getVal(row.local, ['bufferRatio']), getVal(row.local, ['avgStallDuration']),
-                        getVal(row.youtube, ['ts']), getVal(row.youtube, ['startup']), getVal(row.youtube, ['stalls', 'freezeCount']),
-                        getVal(row.youtube, ['totalStall']), getVal(row.youtube, ['freezeCount', 'stalls']), getVal(row.youtube, ['freezeDuration']),
-                        getVal(row.youtube, ['avgBufferAhead']), getVal(row.youtube, ['minBufferAhead']), getVal(row.youtube, ['maxBufferAhead']),
-                        getVal(row.youtube, ['bufferRatio']),
-                        getVal(row.speed, ['download']), getVal(row.speed, ['upload']), getVal(row.speed, ['simulated'])
-                    ];
-                    const escapedValues = values.map(v => `"${String(v).replace(/"/g, '""')}"`);
-                    csvRows.push(escapedValues.join(","));
-                });
-                const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = 'qoe_data.csv'; a.click(); URL.revokeObjectURL(url);
-            }
-
-            /* ------------------------------
-            PDF export (includes insights now)
-            ------------------------------ */
-            async function exportPDF() {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
-                const margin = 40;
-                let y = margin;
-                pdf.setFontSize(16); pdf.text("Network QoE Report", margin, y); y += 18;
-                pdf.setFontSize(10); pdf.text("Generated: " + new Date().toLocaleString(), margin, y); y += 18;
-
-                // main canvases
-                const canvases = Array.from(document.querySelectorAll('#mainColumn canvas'));
-                for (const c of canvases) {
-                    try {
-                        const dataUrl = c.toDataURL('image/png', 0.9);
-                        const imgW = 500;
-                        const imgH = (c.height / c.width) * imgW;
-                        if (y + imgH > 800) { pdf.addPage(); y = margin; }
-                        pdf.addImage(dataUrl, 'PNG', margin, y, imgW, imgH);
-                        y += imgH + 8;
-                    } catch (e) {
-                        console.warn('pdf canvas error', e);
-                    }
-                }
-
-                // append insight text
-                const summaries = Array.from(document.querySelectorAll('#mainColumn .summary'));
-                pdf.setFontSize(12);
-                summaries.forEach(s => {
-                    const txt = s.innerText || s.textContent;
-                    if (!txt) return;
-                    if (y + 60 > 800) { pdf.addPage(); y = margin; }
-                    pdf.text(txt.split('\n').map(l => l.trim()).filter(Boolean).join(' — '), margin, y, { maxWidth: 500 });
-                    y += 40;
-                });
-
-                // Append Insights card text
-                const insights = Array.from(document.querySelectorAll('#mainColumn .card')).slice(0, 3).map(c => c.innerText).join('\n\n');
-                pdf.setFontSize(10);
-                if (y + 160 > 800) { pdf.addPage(); y = margin; }
-                pdf.text(insights.substring(0, 4000), margin, y, { maxWidth: 500 });
-
-                pdf.save('qoe_report.pdf');
-            }
-
-            /* ------------------------------
-            Events wiring
-            ------------------------------ */
-            document.getElementById('applyFilters').addEventListener('click', () => applyFilters());
-            document.getElementById('resetFilters').addEventListener('click', () => {
-                document.getElementById('fromDate').value = '';
-                document.getElementById('toDate').value = '';
-                document.getElementById('userA').value = 'all';
-                document.getElementById('userB').value = 'none';
-                applyFilters();
+                const escapedValues = values.map(v => `"${String(v).replace(/"/g, '""')}"`);
+                csvRows.push(escapedValues.join(","));
             });
-            document.getElementById('downloadCsv').addEventListener('click', () => downloadCSV());
-            document.getElementById('exportPdf').addEventListener('click', () => exportPDF());
-            document.getElementById('refresh').addEventListener('click', () => loadData());
+            const blob = new Blob([csvRows.join("\n")], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'qoe_data.csv'; a.click(); URL.revokeObjectURL(url);
+        }
 
-            /* ------------------------------
-            Initial load
-            ------------------------------ */
-            loadData();
+        /* ------------------------------
+        PDF export (includes insights now)
+        ------------------------------ */
+        async function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+            const margin = 40;
+            let y = margin;
+            pdf.setFontSize(16); pdf.text("Network QoE Report", margin, y); y += 18;
+            pdf.setFontSize(10); pdf.text("Generated: " + new Date().toLocaleString(), margin, y); y += 18;
 
-        </script>
-    </body>
+            // main canvases
+            const canvases = Array.from(document.querySelectorAll('#mainColumn canvas'));
+            for (const c of canvases) {
+                try {
+                    const dataUrl = c.toDataURL('image/png', 0.9);
+                    const imgW = 500;
+                    const imgH = (c.height / c.width) * imgW;
+                    if (y + imgH > 800) { pdf.addPage(); y = margin; }
+                    pdf.addImage(dataUrl, 'PNG', margin, y, imgW, imgH);
+                    y += imgH + 8;
+                } catch (e) {
+                    console.warn('pdf canvas error', e);
+                }
+            }
 
-    </html>
+            // append insight text
+            const summaries = Array.from(document.querySelectorAll('#mainColumn .summary'));
+            pdf.setFontSize(12);
+            summaries.forEach(s => {
+                const txt = s.innerText || s.textContent;
+                if (!txt) return;
+                if (y + 60 > 800) { pdf.addPage(); y = margin; }
+                pdf.text(txt.split('\n').map(l => l.trim()).filter(Boolean).join(' — '), margin, y, { maxWidth: 500 });
+                y += 40;
+            });
+
+            // Append Insights card text
+            const insights = Array.from(document.querySelectorAll('#mainColumn .card')).slice(0, 3).map(c => c.innerText).join('\n\n');
+            pdf.setFontSize(10);
+            if (y + 160 > 800) { pdf.addPage(); y = margin; }
+            pdf.text(insights.substring(0, 4000), margin, y, { maxWidth: 500 });
+
+            pdf.save('qoe_report.pdf');
+        }
+
+        /* ------------------------------
+        Events wiring
+        ------------------------------ */
+        document.getElementById('applyFilters').addEventListener('click', () => applyFilters());
+        document.getElementById('resetFilters').addEventListener('click', () => {
+            document.getElementById('fromDate').value = '';
+            document.getElementById('toDate').value = '';
+            document.getElementById('userA').value = 'all';
+            document.getElementById('userB').value = 'none';
+            applyFilters();
+        });
+        document.getElementById('downloadCsv').addEventListener('click', () => downloadCSV());
+        document.getElementById('exportPdf').addEventListener('click', () => exportPDF());
+        document.getElementById('refresh').addEventListener('click', () => loadData());
+
+        /* ------------------------------
+        Initial load
+        ------------------------------ */
+        loadData();
+
+    </script>
+</body>
+
+</html>
