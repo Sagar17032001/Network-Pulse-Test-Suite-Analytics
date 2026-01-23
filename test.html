@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Network QoE Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#f4f7fb; --card:#ffffff; --text:#0b1f33; --muted:#6b7a90;
+  --accent:#0b69ff;
+}
+body{margin:0;padding:24px;font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
+.page{max-width:1300px;margin:auto}
+h3{margin:0 0 6px}
+.small{font-size:13px;color:var(--muted)}
+.grid{display:grid;gap:16px}
+.card{background:var(--card);padding:16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+.chart-box{height:260px;position:relative}
+canvas{position:absolute;inset:0}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:14px;
+}
+.kpi{
+  background:#f8fafc;
+  padding:14px;border-radius:12px;
+  border-left:4px solid var(--accent)
+}
+.kpi .label{font-size:13px;color:var(--muted)}
+.kpi .value{font-size:20px;font-weight:700}
+
+button{
+  padding:8px 14px;border-radius:8px;
+  border:none;background:var(--accent);
+  color:#fff;font-weight:600;cursor:pointer
+}
+
+.controls{
+  display:flex;justify-content:space-between;
+  align-items:flex-start;margin-bottom:16px;flex-wrap:wrap;gap:12px
+}
+input[type=date]{padding:6px 10px;border-radius:6px;border:1px solid #ccc}
+
+.user-box{
+  background:var(--card);
+  padding:10px;border-radius:10px;
+  max-height:160px;overflow:auto;
+  border:1px solid #e5e7eb
+}
+.user-box label{display:block;font-size:13px;margin-bottom:4px}
+
+#loader{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;color:#fff;font-size:18px
+}
+</style>
+</head>
+
+<body>
+
+<div id="loader">Loading QoE data…</div>
+
+<div class="page">
+
+<div class="controls">
+  <div>
+    <h2>Network QoE Dashboard</h2>
+    <div class="small">Select one or multiple users</div>
+    <div id="userBox" class="user-box"></div>
+  </div>
+
+  <div>
+    From <input type="date" id="fromDate"><br><br>
+    To <input type="date" id="toDate"><br><br>
+    <button onclick="applyFilter()">Apply</button>
+    <button onclick="exportPDF()">PDF</button>
+  </div>
+</div>
+
+<div class="card small" id="contextInfo"></div>
+<div id="main" class="grid"></div>
+
+</div>
+
+<script>
+const API_URL='https://qoe-backend-zr50.onrender.com/api/users/results';
+let ALL_DATA=[];
+
+const toDate=t=>t?new Date(t):null;
+const avg=a=>a.length?(a.reduce((s,x)=>s+x.v,0)/a.length).toFixed(2):0;
+
+function seriesFor(r,p){
+  return r.sort((a,b)=>new Date(a.ts)-new Date(b.ts))
+    .map(x=>{
+      let v=x;p.forEach(k=>v=v?.[k]);
+      return{t:toDate(x.ts),v:Number(v||0)}
+    }).filter(x=>x.t&&!isNaN(x.v))
+}
+
+function drawLine(id,pts,unit,color){
+  const c=document.getElementById(id);
+  if(c._chart)c._chart.destroy();
+  c._chart=new Chart(c,{
+    type:'line',
+    data:{labels:pts.map(p=>p.t.toLocaleString()),
+      datasets:[{data:pts.map(p=>p.v),borderColor:color,tension:.3,pointRadius:2}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{title:{display:true,text:unit}}}}
+  })
+}
+
+function populateUsers(){
+  const box=document.getElementById('userBox');
+  const users=[...new Set(ALL_DATA.map(d=>d.email).filter(Boolean))].sort();
+  box.innerHTML=users.map(u=>`
+    <label><input type="checkbox" value="${u}" checked> ${u}</label>
+  `).join('');
+}
+function getSelectedUsers(){
+  return [...document.querySelectorAll('#userBox input:checked')].map(i=>i.value);
+}
+
+function render(data){
+  const main=document.getElementById('main');
+  main.innerHTML='';
+
+  const emails=[...new Set(data.map(d=>d.email).filter(Boolean))];
+  contextInfo.innerHTML=
+    `<strong>User(s):</strong> ${emails.join(', ') || 'N/A'}<br>
+     <strong>Generated:</strong> ${new Date().toLocaleString()}`;
+
+  const s={
+    voipLat:seriesFor(data,['voip','latencyMs']),
+    voipJit:seriesFor(data,['voip','avgJitterMs']),
+    localStartup:seriesFor(data,['local','startup']),
+    localBuf:seriesFor(data,['local','avgBufferAhead']).map(p=>({...p,v:p.v*1000})),
+    ytStartup:seriesFor(data,['youtube','startup']),
+    ytBuf:seriesFor(data,['youtube','avgBufferAhead']).map(p=>({...p,v:p.v*1000})),
+    speedDL:seriesFor(data,['speed','download']),
+    speedUL:seriesFor(data,['speed','upload'])
+  };
+
+  main.innerHTML+=`
+  <div class="card">
+    <h3>Aggregated QoE Summary</h3>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="label">Avg Download</div><div class="value">${avg(s.speedDL)} Mbps</div></div>
+      <div class="kpi"><div class="label">Avg Upload</div><div class="value">${avg(s.speedUL)} Mbps</div></div>
+      <div class="kpi"><div class="label">Avg VoIP Latency</div><div class="value">${avg(s.voipLat)} ms</div></div>
+      <div class="kpi"><div class="label">Avg VoIP Jitter</div><div class="value">${avg(s.voipJit)} ms</div></div>
+      <div class="kpi"><div class="label">Avg Local Startup</div><div class="value">${avg(s.localStartup)} ms</div></div>
+      <div class="kpi"><div class="label">Avg Local Buffer</div><div class="value">${avg(s.localBuf)} ms</div></div>
+      <div class="kpi"><div class="label">Avg YouTube Startup</div><div class="value">${avg(s.ytStartup)} ms</div></div>
+      <div class="kpi"><div class="label">Avg YouTube Buffer</div><div class="value">${avg(s.ytBuf)} ms</div></div>
+    </div>
+  </div>
+
+  <div class="card"><h3>VoIP Performance</h3>
+    <div class="chart-box"><canvas id="voipLat"></canvas></div>
+    <div class="chart-box"><canvas id="voipJit"></canvas></div>
+  </div>
+
+  <div class="card"><h3>Local Video Playback</h3>
+    <div class="chart-box"><canvas id="localStartup"></canvas></div>
+    <div class="chart-box"><canvas id="localBuf"></canvas></div>
+  </div>
+
+  <div class="card"><h3>YouTube Streaming</h3>
+    <div class="chart-box"><canvas id="ytStartup"></canvas></div>
+    <div class="chart-box"><canvas id="ytBuf"></canvas></div>
+  </div>
+
+  <div class="card"><h3>Speed Test</h3>
+    <div class="chart-box"><canvas id="spdDL"></canvas></div>
+    <div class="chart-box"><canvas id="spdUL"></canvas></div>
+  </div>`;
+
+  drawLine('voipLat',s.voipLat,'Latency (ms)','#3b82f6');
+  drawLine('voipJit',s.voipJit,'Jitter (ms)','#f59e0b');
+  drawLine('localStartup',s.localStartup,'Startup (ms)','#f97316');
+  drawLine('localBuf',s.localBuf,'Buffer (ms)','#10b981');
+  drawLine('ytStartup',s.ytStartup,'Startup (ms)','#8b5cf6');
+  drawLine('ytBuf',s.ytBuf,'Buffer (ms)','#6366f1');
+  drawLine('spdDL',s.speedDL,'Download (Mbps)','#06b6d4');
+  drawLine('spdUL',s.speedUL,'Upload (Mbps)','#22c55e');
+}
+
+function applyFilter(){
+  const users=getSelectedUsers();
+  const f=fromDate.value,t=toDate.value;
+  let d=[...ALL_DATA];
+  if(users.length) d=d.filter(x=>users.includes(x.email));
+  if(f){const s=new Date(f);s.setHours(0,0,0,0);d=d.filter(x=>new Date(x.ts)>=s)}
+  if(t){const e=new Date(t);e.setHours(23,59,59,999);d=d.filter(x=>new Date(x.ts)<=e)}
+  render(d);
+}
+
+async function load(){
+  const r=await fetch(API_URL);
+  ALL_DATA=await r.json();
+  populateUsers();
+  loader.style.display='none';
+  render(ALL_DATA);
+}
+load();
+
+/* ===== WORKING PDF EXPORT ===== */
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','pt','a4');
+  let y = 40;
+
+  const addSection = (title, ids) => {
+    if(y > 700){ pdf.addPage(); y = 40; }
+    pdf.setFontSize(16);
+    pdf.text(title, 40, y);
+    y += 16;
+
+    ids.forEach(id=>{
+      const c=document.getElementById(id);
+      if(!c) return;
+      if(y > 700){ pdf.addPage(); y = 40; }
+      pdf.addImage(c.toDataURL(),'PNG',40,y,520,180);
+      y += 190;
+    });
+  };
+
+  pdf.setFontSize(20);
+  pdf.text("Network QoE Report",40,y);y+=26;
+
+  pdf.setFontSize(11);
+  contextInfo.innerText.split('\n').forEach(l=>{
+    pdf.text(l,40,y);y+=14;
+  });
+  y+=10;
+
+  pdf.setFontSize(16);
+  pdf.text("Aggregated QoE Summary",40,y);y+=18;
+  document.querySelectorAll('.kpi').forEach(k=>{
+    pdf.setFontSize(11);
+    pdf.text("• "+k.innerText.replace('\n',' : '),40,y);
+    y+=14;
+  });
+  y+=10;
+
+  addSection("VoIP Performance",['voipLat','voipJit']);
+  addSection("Local Video Playback",['localStartup','localBuf']);
+  addSection("YouTube Streaming",['ytStartup','ytBuf']);
+  addSection("Speed Test",['spdDL','spdUL']);
+
+  pdf.save("network_qoe_report.pdf");
+}
+</script>
+</body>
+</html>
